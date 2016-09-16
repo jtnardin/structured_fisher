@@ -4,8 +4,8 @@
 function [r_e,r_w,r_w_m1] = negative_sensor(u,xm_int,m_bd_1)
 
     r_e = (u(xm_int(1:end-1)+1) - u(xm_int(1:end-1)+2))./(u(xm_int(1:end-1)) - u(xm_int(1:end-1)+1));    
-    r_w = (u(xm_int) - u(xm_int+1))./(u(xm_int-1) - u(xm_int-i));
-    r_e = [r_e,-1];
+    r_w = (u(xm_int) - u(xm_int+1))./(u(xm_int-1) - u(xm_int));
+    r_e = [r_e;-1];
     %boundary m = 1
     r_w_m1 = (u(m_bd_1(2:end-1)-1) - u(m_bd_1(2:end-1)))./(u(m_bd_1(2:end-1)-2) - u(m_bd_1(2:end-1)-1));
     
