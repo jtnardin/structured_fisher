@@ -9,13 +9,13 @@ clear all; clc
 
 %Construct vectors of independent variables
 mn = 21; %number of m points
-xn = 101; %number of x points
+xn = 201; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
-t = 0:dt:5;
+t = 0:dt:15;
 m = linspace(0,1,mn);
 dm = m(2) - m(1);
-x = linspace(0,10,xn);
+x = linspace(0,20,xn);
 dx = x(2) - x(1);
 [X,M] = meshgrid(x,m);
 tn = length(t);
@@ -38,15 +38,15 @@ bd = union(m_bd,x_bd);
 xm_int(bd) = [];
 
 %rate of cellular diffusion
-D = 1;
-%rate of MAPK activation
+D = 3;
 
+%rate of proliferation
 lambda = 0.5;
 
 %define activation modulus, signal factor, and response to signal factor
 s = @(t) 4*exp(-t);
 
-f = @(s) (s-1)/2;
+f = @(s) (s)/2;
 
 g = @(m) (1-m)/10;
 
@@ -89,7 +89,7 @@ Vwc_m1 = @(t) f(s(t))*Vwc_m1;
 %initial condition
 u0 = 1;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = u0*(X<=6).*(M>=0.2).*(M<=0.5).*exp(-M);
+IC = u0*(X<=3).*(M>=0.2).*(M<=0.5).*exp(-M);
 IC = IC(:);
 
 
@@ -123,7 +123,11 @@ A_neg = @(se,sw,ve,vw,ind,dn) sparse([ind ind ind],[ind-dn ind ind+dn],[(-vw.*sw
 A_neg_m1 = @(sw,vw,ind,dn) sparse([ind ind],[ind-dn ind],[(-vw.*sw/2); ...
     (vw.*sw/2-vw)],total,total);
 
-    
+%vector for integrating over m
+integ_mat = [];
+for i = 1:xn
+    integ_mat = [integ_mat; i*ones(mn,1)];
+end
 %initialize
 u = zeros(total,tn);
 u(:,1) = IC;
@@ -149,10 +153,14 @@ for i = 2:tn
         A_m1 = A_neg_m1(sigma(r_w_m1),Vwc_m1(t(i)),m_bd_1(2:end-1),1);
     end
     
+    %integrate over m (just riemann for now)
+    w = dm*accumarray(integ_mat,u(:,i-1));
+    w = repmat(w',mn,1);
+    w = w(:);
     
     %main computation
     u(:,i) = (speye(total) + theta*(A_int + A_m1))\((speye(total)...
-        - (1-theta)*(A_int + A_m1) + Dmat)*u(:,i-1)); 
+        - (1-theta)*(A_int + A_m1) + Dmat)*u(:,i-1) + dt*lambda*u(:,i-1).*(0.3-w)); 
   
 end
 
@@ -171,13 +179,13 @@ for i = 1:100:tn
     subplot(1,2,1)
     surf(x,m,y(:,:,i),'edgecolor','none')    
     title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-    axis([0 10 0 1 0 1])
+    axis([0 x(end) 0 1 0 1])
     caxis([0,1])
     colorbar
     view([-1 1 1])
     
     subplot(1,2,2)
     plot(x,z(:,i))    
-    axis([0 10 0 1])
+    axis([0 x(end) 0 1])
     pause(.125)
 end
