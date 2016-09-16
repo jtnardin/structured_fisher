@@ -11,18 +11,13 @@ clear all; clc
 mn = 21; %number of m points
 xn = 101; %number of x points
 total = mn*xn;
-
 dt = 1e-3; %time step
-t = 0:dt:10;
-
+t = 0:dt:5;
 m = linspace(0,1,mn);
 dm = m(2) - m(1);
-
 x = linspace(0,10,xn);
 dx = x(2) - x(1);
-
 [X,M] = meshgrid(x,m);
-
 tn = length(t);
 
 %construct boundary points, interior
@@ -45,11 +40,18 @@ xm_int(bd) = [];
 %rate of cellular diffusion
 D = 1;
 %rate of MAPK activation
-%V = .05*ones(length(m)-2,1);
 
-%define activation modulus
-g = @(m) -(1-m)/10;
-%must be a better way... but should work for now
+lambda = 0.5;
+
+%define activation modulus, signal factor, and response to signal factor
+s = @(t) 4*exp(-t);
+
+f = @(s) (s-1)/2;
+
+g = @(m) (1-m)/10;
+
+%now define the velocity (in the m-direction) given the above variables
+V = zeros(mn-1,1);
 for i = 1:mn-1
     V(i) = g((m(i)+m(i+1))/2);
 end
@@ -77,14 +79,17 @@ Vwc = Vwc(:);
 Vwc_m1 = Vw_m1'*dt/dm;
 Vwc_m1 = repmat(Vwc_m1,1,xn-2);
 Vwc_m1 = Vwc_m1(:);
-
+% 
+Vec = @(t) f(s(t))*Vec;
+Vwc = @(t) f(s(t))*Vwc;
+Vwc_m1 = @(t) f(s(t))*Vwc_m1;
 
 
 
 %initial condition
 u0 = 1;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = u0*(X<=6).*(M>=0.5).*(M<=0.9).*exp(-M);
+IC = u0*(X<=6).*(M>=0.2).*(M<=0.5).*exp(-M);
 IC = IC(:);
 
 
@@ -128,15 +133,20 @@ tic
 for i = 2:tn
 
     
-    %Change sensors, A matrix based on velocity
-    if Ve(1) >= 0 
+    %Change sensors, A matrix based on velocity (whose sign depends on
+    %f(s(t))
+    if f(s(t(i))) >= 0 
+        %sensors
         [r_e,r_w,r_w_m1] = positive_sensor(u(:,i-1),xm_int,m_bd_1);
-        A_int = A_pos(sigma(r_e),sigma(r_w),Vec,Vwc,xm_int,1);
-        A_m1 = A_pos_m1(sigma(r_w_m1),Vwc_m1,m_bd_1(2:end-1),1);
+        %construct matrices
+        A_int = A_pos(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),xm_int,1);
+        A_m1 = A_pos_m1(sigma(r_w_m1),Vwc_m1(t(i)),m_bd_1(2:end-1),1);
     else
+        %sensors
         [r_e,r_w,r_w_m1] = negative_sensor(u(:,i-1),xm_int,m_bd_1);
-        A_int = A_neg(sigma(r_e),sigma(r_w),Vec,Vwc,xm_int,1);
-        A_m1 = A_neg_m1(sigma(r_w_m1),Vwc_m1,m_bd_1(2:end-1),1);
+        %construct matrices
+        A_int = A_neg(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),xm_int,1);
+        A_m1 = A_neg_m1(sigma(r_w_m1),Vwc_m1(t(i)),m_bd_1(2:end-1),1);
     end
     
     
@@ -160,7 +170,7 @@ figure('units','normalized','outerposition',[0 0 1 1])
 for i = 1:100:tn
     subplot(1,2,1)
     surf(x,m,y(:,:,i),'edgecolor','none')    
-    title(['t = ' num2str(t(i))])
+    title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
     axis([0 10 0 1 0 1])
     caxis([0,1])
     colorbar
