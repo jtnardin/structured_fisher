@@ -38,17 +38,17 @@ bd = union(m_bd,x_bd);
 xm_int(bd) = [];
 
 %rate of cellular diffusion
-D = 3;
+D = 2;
 
 %rate of proliferation
-lambda = 0.5;
+lambda = 2;
 
 %define activation modulus, signal factor, and response to signal factor
-s = @(t) 4*exp(-t);
+s = @(t) (1+sin(t));
 
-f = @(s) (s)/2;
+f = @(s) s-1;
 
-g = @(m) (1-m)/10;
+g = @(m) (1-m)/4;
 
 %now define the velocity (in the m-direction) given the above variables
 V = zeros(mn-1,1);
@@ -60,6 +60,7 @@ end
 Ve = V(2:end);
 Vw = V(1:end-1);
 Vw_m1 = V(end);
+Ve_m0 = V(1);
 
 %measure of implicitness (1 = backward euler, 0 = forward euler, 1/2 =
 %crank nicholson)
@@ -79,17 +80,24 @@ Vwc = Vwc(:);
 Vwc_m1 = Vw_m1'*dt/dm;
 Vwc_m1 = repmat(Vwc_m1,1,xn-2);
 Vwc_m1 = Vwc_m1(:);
+
+Vec_m0 = Ve_m0'*dt/dm;
+Vec_m0 = repmat(Vec_m0,1,xn-2);
+Vec_m0 = Vec_m0(:);
+
+
 % 
 Vec = @(t) f(s(t))*Vec;
 Vwc = @(t) f(s(t))*Vwc;
 Vwc_m1 = @(t) f(s(t))*Vwc_m1;
+Vec_m0 = @(t) f(s(t))*Vec_m0;
 
 
 
 %initial condition
 u0 = 1;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = u0*(X<=3).*(M>=0.2).*(M<=0.5).*exp(-M);
+IC = u0*(X<=5).*(M>=0.3).*(M<=0.6).*exp(-M);
 IC = IC(:);
 
 
@@ -103,10 +111,10 @@ sigma = @(r) (r+abs(r))./(1+abs(r));
 A_pos = @(se,sw,ve,vw,ind,dn) sparse([ind ind ind],[ind-dn ind ind+dn],[vw.*(-1+sw/2); ...
     (ve.*(1-1*se/2)-vw.*sw/2); (ve.*se/2)],total,total);
 
-
 A_pos_m1 = @(sw,vw,ind,dn) sparse([ind ind],[ind-dn ind],[vw.*(-1+sw/2); ...
     (-vw.*sw/2)],total,total);
 
+A_pos_m0 = @(se,ve,ind,dn) sparse([ind ind],[ind ind+dn],[ve.*(1-1*se/2); ve.*se/2],total,total);
 
 Dmat = Dc*sparse([xm_int xm_int xm_int],[xm_int-mn xm_int+mn xm_int],[ones(1,2*length(xm_int))...
     -2*ones(1,length(xm_int))],total,total);
@@ -122,6 +130,9 @@ A_neg = @(se,sw,ve,vw,ind,dn) sparse([ind ind ind],[ind-dn ind ind+dn],[(-vw.*sw
 
 A_neg_m1 = @(sw,vw,ind,dn) sparse([ind ind],[ind-dn ind],[(-vw.*sw/2); ...
     (vw.*sw/2-vw)],total,total);
+
+A_neg_m0 = @(se,ve,ind,dn) sparse([ind ind],[ind ind+dn],[ve.*se/2; (ve-ve.*se/2)],total,total);
+
 
 %vector for integrating over m
 integ_mat = [];
@@ -141,16 +152,18 @@ for i = 2:tn
     %f(s(t))
     if f(s(t(i))) >= 0 
         %sensors
-        [r_e,r_w,r_w_m1] = positive_sensor(u(:,i-1),xm_int,m_bd_1);
+        [r_e,r_w,r_w_m1,r_e_m1] = positive_sensor(u(:,i-1),xm_int,m_bd_1,m_bd_0);
         %construct matrices
         A_int = A_pos(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),xm_int,1);
         A_m1 = A_pos_m1(sigma(r_w_m1),Vwc_m1(t(i)),m_bd_1(2:end-1),1);
+        A_m0 = A_pos_m0(sigma(r_e_m1),Vec_m0(t(i)),m_bd_0(2:end-1),1);
     else
         %sensors
-        [r_e,r_w,r_w_m1] = negative_sensor(u(:,i-1),xm_int,m_bd_1);
+        [r_e,r_w,r_w_m1,r_e_m1] = negative_sensor(u(:,i-1),xm_int,m_bd_1,m_bd_0);
         %construct matrices
         A_int = A_neg(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),xm_int,1);
         A_m1 = A_neg_m1(sigma(r_w_m1),Vwc_m1(t(i)),m_bd_1(2:end-1),1);
+        A_m0 = A_pos_m0(sigma(r_e_m1),Vec_m0(t(i)),m_bd_0(2:end-1),1);
     end
     
     %integrate over m (just riemann for now)
@@ -159,8 +172,8 @@ for i = 2:tn
     w = w(:);
     
     %main computation
-    u(:,i) = (speye(total) + theta*(A_int + A_m1))\((speye(total)...
-        - (1-theta)*(A_int + A_m1) + Dmat)*u(:,i-1) + dt*lambda*u(:,i-1).*(0.3-w)); 
+    u(:,i) = (speye(total) + theta*(A_int + A_m1 + A_m0))\((speye(total)...
+        - (1-theta)*(A_int + A_m1 + A_m0) + Dmat)*u(:,i-1) + dt*lambda*u(:,i-1).*(0.2-w)); 
   
 end
 
