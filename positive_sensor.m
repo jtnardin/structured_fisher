@@ -7,7 +7,7 @@ function [r_e,r_w,r_w_m1,r_e_m0] = positive_sensor(u,xm_int,m_bd_1,m_bd_0)
     r_w = (u(xm_int(2:end)-1) - u(xm_int(2:end)-2))./(u(xm_int(2:end)) - u(xm_int(2:end)-1));
     r_w = [-1;r_w];
     %boundary m = 1
-    r_w_m1 = (u(m_bd_1(2:end-1)-1) - u(m_bd_1(2:end-1)-2))./(u(m_bd_1(2:end-1)) - u(m_bd_1(2:end-1)));
+    r_w_m1 = (u(m_bd_1(2:end-1)-1) - u(m_bd_1(2:end-1)-2))./(u(m_bd_1(2:end-1)) - u(m_bd_1(2:end-1)-1));
     r_e_m0 = (u(m_bd_0(2:end-1)+1) - u(m_bd_0(2:end-1)))./(u(m_bd_0(2:end-1)+2) - u(m_bd_0(2:end-1)+1));
     
     %eliminate NaN values (0/0 -- not steep!)

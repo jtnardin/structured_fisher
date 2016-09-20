@@ -5,7 +5,7 @@
 %need to better approximate the velocity -- how to account for places where
 % g=0?
 
-clear all; clc
+% clear all; clc
 
 %Construct vectors of independent variables
 mn = 21; %number of m points
@@ -38,17 +38,17 @@ bd = union(m_bd,x_bd);
 xm_int(bd) = [];
 
 %rate of cellular diffusion
-D = 2;
+D = 0;
 
 %rate of proliferation
-lambda = 2;
+lambda = 0;
 
 %define activation modulus, signal factor, and response to signal factor
-s = @(t) (1+sin(t));
+s = @(t) 1+sin(t);
 
 f = @(s) s-1;
 
-g = @(m) (1-m)/4;
+g = @(m) m.*(1-m);%(1-m)/4;
 
 %now define the velocity (in the m-direction) given the above variables
 V = zeros(mn-1,1);
@@ -63,7 +63,7 @@ Vw_m1 = V(end);
 Ve_m0 = V(1);
 
 %measure of implicitness (1 = backward euler, 0 = forward euler, 1/2 =
-%crank nicholson)
+%crank-nicholson)
 theta = 0.5;
 
 %computational diffusion, east velocity and west velocity
@@ -97,7 +97,7 @@ Vec_m0 = @(t) f(s(t))*Vec_m0;
 %initial condition
 u0 = 1;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = u0*(X<=5).*(M>=0.3).*(M<=0.6).*exp(-M);
+IC = u0*(X<=10).*(X>=5).*(M>=0.8).*exp(-M);
 IC = IC(:);
 
 
@@ -185,7 +185,7 @@ z = zeros(xn,tn);
 
 for i = 1:tn
     y(:,:,i) = reshape(u(:,i),mn,xn);
-    z(:,i) = dm*trapz(y(:,:,i));
+    z(:,i) = dm*sum(y(:,:,i));
 end
 figure('units','normalized','outerposition',[0 0 1 1])
 for i = 1:100:tn
