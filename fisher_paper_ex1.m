@@ -1,19 +1,22 @@
-%fisher_diffusion_struct_Dm_compare_w_homog.m written 10-10-16 by JTN to simulate
-%u_t + (f(s(t))g(m)u)_m = D(m)*u_xx + lambda(m)*u(1-w) and then compare with homogenized fisher equation 
+%fisher_paper_ex1.m written 10-17-16 by JTN to simulate
+%u_t + (f(s(t))g(m)u)_m = D(m)*u_xx + lambda(m)*u(1-w) and then compare with
+%nonautonomous fisher equation 
 
-
-%%%%%%   9-21-16
-%%%%% Simulations look good, now need to clean up, maybe speed up? Code.
-
+%Example 1 : Threshold at m = 1 : f(s) = 1 , g(m) = m(1-m)
 
 clear all; clc
+
+
+save_any = 'pics'; %pics, vid, none
+
+
 
 %Construct vectors of independent variables
 mn = 41; %number of m points
 xn = 151; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
-t = 0:dt:30;
+t = 0:dt:15;
 m = linspace(0,1,mn);
 dm = m(2) - m(1);
 x = linspace(0,30,xn);
@@ -29,9 +32,15 @@ tn = length(t);
 
 s = @(t) 1+sin(t);
 
-f = @(s) 2*(s-1);
+f = @(s) 1;
 
-g = @(m) m.*(1-m);%(1-m)/4;
+alpha = 0.25;
+
+g = @(m) alpha*m.*(1-m);%(1-m)/4;
+sigma_inv = @(t,m) (m*exp(alpha*t))./((1-m)+m*exp(alpha*t));
+sigma = @(m2,m1) log((m2*(1-m1))./((1-m2)*(m1)))/alpha;
+IC_1_d_m = @(m) 1*(m>=0).*(m<=0.3);
+Soln = @(t,s) g(sigma_inv(-t,s))./(g(s)).*IC_1_d_m(sigma_inv(-t,s));
 
 
 %find x locations where D large
@@ -42,17 +51,14 @@ lambda_cut = 0.5;
 D_large = 1;
 D_small = D_large*1e-2;
 
-lambda_large = .25;
+lambda_large = 0.25;
 lambda_small = lambda_large*1e-2;
 
-% integrand = @(x) 1./(1+exp(2-2*cos(x)));
-% y = linspace(0,2*pi,1000);
-% dy = y(2)-y(1);
-% integral_value = dy*trapz(integrand(y));
+%nonautonomous diffusion, proliferation
 
-%based on the given functions,
-D_homog = D_large + 5/(2*pi)*(D_small-D_large)*1.205699160794349;
-lambda_homog = lambda_small + 5/(2*pi)*(lambda_large-lambda_small)*1.205699160794349;
+D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0,0.3,1./(1+exp(alpha*t)));
+lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0,0.3,1./(1+exp(alpha*t)));
+
 
 %construct boundary points, interior
 xm_int = 1:mn*xn;
@@ -77,7 +83,7 @@ m_int(m_bd) = [];
 
 xm_int(bd) = [];
 
-%extra bound for sensors)
+%extra bound for sensors
 m_bd_1_int = 1:mn-2:(mn-2)*(xn-1)+1;
 m_bd_nm1_int = (mn-2):mn-2:(mn-2)*xn;
 
@@ -126,7 +132,7 @@ Vec_m0 = @(t) f(s(t))*Vec_m0;
 %initial condition
 u0 = 10/3;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = u0*(X<=5).*(M<0.3).*exp(-M);
+IC = u0*(X<=5).*(M<0.3);%.*exp(-M);
 IC1d = sum(IC)/mn;
 IC = IC(:);
 
@@ -135,6 +141,8 @@ IC = IC(:);
 %sigma for flux limiters
 sigma = @(r) (r+abs(r))./(1+abs(r));
 
+
+%determine indices where lambda, D large or small. 
 
 D_m_large = x_int(M(x_int)>=D_cut);
 D_m_small = x_int(M(x_int)<D_cut);
@@ -193,11 +201,27 @@ A_neg_m1 = @(sw,vw,ind,dn) sparse([ind ind],[ind-dn ind],[(-vw.*sw/2); ...
 A_neg_m0 = @(se,ve,ind,dn) sparse([ind ind],[ind ind+dn],[ve.*se/2; (ve-ve.*se/2)],total,total);
 
 
-%vector for integrating over m
-integ_mat = [];
+%vector for integrating over m via trapezoid rule
+% integ_mat = [];
+% for i = 1:xn
+%     integ_mat = [integ_mat; i*ones(mn,1)];
+% end
+
+
+%still need to think about incorporating trap rule -- conserving mass in m
+%dimension
+
+% trap_vec = [1 2*ones(1,mn-2) 1]; %[1 2 2 2 ... 2 1]
+% trap_matrix_init = sparse(1:mn*xn,1:mn*xn,repmat(trap_vec,1,xn)); %diag with trap_vec on diagonal
+
+integ_ind = [];
 for i = 1:xn
-    integ_mat = [integ_mat; i*ones(mn,1)];
+    integ_ind = [integ_ind i*ones(1,mn)]; 
 end
+add_matrix = sparse(integ_ind,1:mn*xn,1); %matrix with 1's along rows for addition
+
+integ_matrix = add_matrix;
+
 %initialize
 u = zeros(total,tn);
 u(:,1) = IC;
@@ -226,7 +250,8 @@ for i = 2:tn
     end
     
     %integrate over m (just riemann for now)
-    w = dm*accumarray(integ_mat,u(:,i-1));
+%     w = dm*accumarray(integ_mat,u(:,i-1));
+    w = dm*integ_matrix*u(:,i-1);
     w = repmat(w',mn,1);
     w = w(:);
     
@@ -248,10 +273,10 @@ for i = 1:tn
     z(:,i) = dm*sum(y(:,:,i));
 end
 
-%now compare with homogenized eqn
-z_homog = RD_sim(D_homog,lambda_homog,t,x,IC1d);
+% %now compare with homogenized eqn
+% z_homog = RD_sim(D_homog,lambda_homog,t,x,IC1d);
 %and nonautonomous
-z_nonaut = RD_sim_nonaut(D_small,D_large,lambda_large,lambda_small,t,x,IC1d);
+z_nonaut = RD_sim_nonaut_ex1(D_nonaut,lambda_nonaut,t,x,IC1d);
 
 umax = max(max(u));
 zmax = max(max(z));
@@ -265,64 +290,160 @@ zmax = max(max(z));
 % % vid.FrameRate = 15;
 % % open(vid);
 
-figure('units','normalized','outerposition',[0 0 1 1])
-    
-for i = 1:100:tn
-    subplot(1,2,1)
-    surf(x,m,y(:,:,i),'edgecolor','none')
-    hold on
-    title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-    axis([0 25 0 1 0 umax])
-    caxis([0,5])
-    plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-    colorbar
-    view(2)
-    xlabel('x')
-    ylabel('m')
-    hold off
-    
-    subplot(1,2,2)
-    hold off
-    plot(x,z(:,i))    
-    hold on
-    plot(x,z_homog(i,:),'r')
-    plot(x,z_nonaut(i,:),'color',[0 .5 0])
-    axis([0 25 0 1.01])
-    pause(.125)
-%     writeVideo(vid, getframe(f1));
-end
-
-    
-% close(vid)
-
-
-% count = 1;
-% for i = 1:3750:15001
-%     figure
-%     subplot(2,1,1)
-%     contour(x,m,y(:,:,i))    
+% figure('units','normalized','outerposition',[0 0 1 1])
+%     
+% for i = 1:100:tn
+%     subplot(4,4,[2:4 6:8 10:12])
+%     surf(x,m,y(:,:,i),'edgecolor','none')
+%     hold on
 %     title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-%     axis([0 x(end) 0 1 0 umax])
-%     caxis([0,umax])
-%     colorbar
+%     axis([0 25 0 1 0 umax])
+%     caxis([0,5])
+%     plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+%     %colorbar
 %     view(2)
+%     hold off
+%     subplot(4,4,[14:16])
+%     hold off
+%     plot(x,z(:,i))
+%     hold on
+%     plot(x,z_nonaut(i,:),'color',[0 .5 0])
+%     axis([0 25 0 1.01])
 %     xlabel('x')
+%     pause(.125)
+%     
+%     subplot(4,4,[1 5 9])
+%    
+% %     if sigma_inv(t(i),0.3)>.975
+% %         plot([Soln(t(i),m(1:end-1)) g(0.3)./g(sigma_inv(t(i),0.3))],[m(1:end-1) sigma_inv(t(i),0.3)]);
+% %     else
+% %         plot(Soln(t(i),m),m)
+% %     end
+% %     
+% 
+% 
+%     m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
+%     plot(Soln(t(i),m1),m1)
+%     
+% 
+%     axis([0 10 0 1])
+% 
+%     set(gca,'xdir','reverse')
 %     ylabel('m')
 %     
-%     subplot(2,1,2)
-%     plot(x,z(:,i))    
-%     xlabel('x')
-%     ylabel('w')
-%     title(['t = ' num2str(t(i))])
-%     axis([0 x(end) 0 zmax])
-% 
-%     set(gcf,'color',[1 1 1])
+%     %     writeVideo(vid, getframe(f1));
 %     
-% %     export_fig(gcf,['num_sim_ex1_contour_' num2str(count) '.eps'])
-% %     saveas(gcf,['num_sim_ex1_contour_' num2str(count) '.fig'])
-%     
-%     count = count+1;
 % end
-% 
-% 
-% 
+
+switch save_any    
+    
+    case 'pics'
+        
+        
+        count = 1;
+        step = floor(tn/4);
+        for i = step:step:tn
+            
+            figure('units','normalized','outerposition',[0 0 1 1])
+            subplot(3,5,[2:5 7:10 15:15])
+            contourf(x,m,y(:,:,i),'edgecolor','none')
+            hold on
+            title(['u(t,x,m), t = ' num2str(round(t(i))) ', Example 1'])
+            xlabel('x')
+            axis([0 25 0 1 0 umax])
+            caxis([0,5])
+            plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+            %colorbar
+            view(2)
+            set(gca,'ytick',[])
+            
+            subplot(3,5,[1 6 11])
+
+            m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
+            plot(Soln(t(i),m1),m1,'linewidth',1)
+            axis([0 5 0 1])
+            set(gca,'xdir','reverse')
+            ylabel('m')
+            xlabel('u(t,m)')
+            
+%             set(gcf,'color',[1 1 1])
+            
+            exportfig(gcf,['ex1_mx' num2str(count) '.eps'])
+            saveas(gcf,['ex1_mx' num2str(count) '.fig'])
+            
+            count = count + 1;
+
+        end
+        
+        figure
+        
+        for i = step:step:tn
+            plot(x,z(:,i))
+            hold on
+            plot(x,z_nonaut(i,:),'color',[0 .5 0])
+            axis([0 25 0 1.01])
+            xlabel('x')
+            ylabel('w(x,t)')
+
+            
+            legend('Structured simulation','Nonautonomous simulation','location','northeast')
+            
+
+
+        end
+
+%         exportfig(gcf,['ex1_x_nonaut.eps'])
+%         saveas(gcf,['ex1_x_nonaut.fig'])
+
+        
+        
+        
+    case 'video'
+        
+
+        figure('units','normalized','outerposition',[0 0 1 1])
+
+        for i = 1:100:tn
+            subplot(4,4,[2:4 6:8 10:12])
+            surf(x,m,y(:,:,i),'edgecolor','none')
+            hold on
+            title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
+            axis([0 25 0 1 0 umax])
+            caxis([0,5])
+            plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+            %colorbar
+            view(2)
+            hold off
+            subplot(4,4,[14:16])
+            hold off
+            plot(x,z(:,i))
+            hold on
+            plot(x,z_nonaut(i,:),'color',[0 .5 0])
+            axis([0 25 0 1.01])
+            xlabel('x')
+            pause(.125)
+
+            subplot(4,4,[1 5 9])
+
+        %     if sigma_inv(t(i),0.3)>.975
+        %         plot([Soln(t(i),m(1:end-1)) g(0.3)./g(sigma_inv(t(i),0.3))],[m(1:end-1) sigma_inv(t(i),0.3)]);
+        %     else
+        %         plot(Soln(t(i),m),m)
+        %     end
+        %     
+
+
+            m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
+            plot(Soln(t(i),m1),m1)
+
+
+            axis([0 10 0 1])
+
+            set(gca,'xdir','reverse')
+            ylabel('m')
+
+            %     writeVideo(vid, getframe(f1));
+
+        end
+end
+
