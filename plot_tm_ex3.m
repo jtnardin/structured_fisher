@@ -21,7 +21,7 @@ figure
 
 contourf(T,S,A,'edgecolor','none')
 
-title('$\sigma^{-1}(t;\underline{m})$, Example 2','interpreter','latex')
+title(' Example 3 $\sigma^{-1}(t;\underline{m})$','interpreter','latex')
 xlabel('t')
 ylabel('m')
 

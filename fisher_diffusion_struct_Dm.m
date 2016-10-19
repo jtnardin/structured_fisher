@@ -44,7 +44,8 @@ m_int(m_bd) = [];
 
 xm_int(bd) = [];
 
-%extra bound for sensors)
+%extra bound for sensors -- sensing second, second to last points from
+%INTERIOR points.
 m_bd_1_int = 1:mn-2:(mn-2)*(xn-1)+1;
 m_bd_nm1_int = (mn-2):mn-2:(mn-2)*xn;
 
