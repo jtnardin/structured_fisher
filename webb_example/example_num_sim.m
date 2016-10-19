@@ -1,6 +1,4 @@
-%fisher_diffusion_act_incorp_ve_ve.m written 9-15-16 by JTN to simulate
-%u_t + (g(m)u)_m = 0. For now, g(m) = exp(-m), but subject to change
-%in future.
+
 
 %need to better approximate the velocity -- how to account for places where
 % g=0?
@@ -8,7 +6,7 @@
 clear all; clc
 
 %Construct vectors of independent variables
-mn = 80; %number of m points
+mn = 40; %number of m points
 total = mn;
 
 tn = 300;

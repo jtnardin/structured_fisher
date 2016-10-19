@@ -1,5 +1,5 @@
 t = linspace(0,1,300);
-s = linspace(1,3,80);
+s = linspace(1,3,40);
 
 [T,S] = meshgrid(t,s);
 
