@@ -1,8 +1,7 @@
 %%%g_sigma_h_example2.m written 10-19-16 by JTN to give all functions
 %%%necessary for example 2 in structured fisher paper
-function [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example2
+function [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example2(alpha)
 
-    alpha = .5;
 
     g = @(s) alpha*s.*(1-s);
 

@@ -14,11 +14,11 @@ prof_diff_plot = 'no';
 
 
 %Construct vectors of independent variables
-mn = 41; %number of m points
+mn = 81; %number of m points
 xn = 151; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
-t = 0:dt:30;
+t = 0:dt:15;
 m = linspace(0,1,mn);
 dm = m(2) - m(1);
 x = linspace(0,30,xn);
@@ -39,11 +39,13 @@ beta = 4;
 f = @(s) beta*(s-1);
 
 alpha = 0.5;
+[g,sigma,sigma_inv,s_t,f,int_f_s] = g_sigma_h_example3(alpha);
+IC_1_d_m = IC_uniform(.05,.35);
 
-g = @(m) alpha*m.*(1-m);%(1-m)/4;
-sigma_inv = @(t,m) (m.*exp(alpha.*t))./((1-m)+m.*exp(alpha*t));
-sigma = @(m2,m1) log((m2.*(1-m1))./((1-m2).*(m1)))/alpha;
-IC_1_d_m = @(m) 10/3*(m>=0.05).*(m<=0.35);
+% g = @(m) alpha*m.*(1-m);%(1-m)/4;
+% sigma_inv = @(t,m) (m.*exp(alpha.*t))./((1-m)+m.*exp(alpha*t));
+% sigma = @(m2,m1) log((m2.*(1-m1))./((1-m2).*(m1)))/alpha;
+% IC_1_d_m = @(m) 10/3*(m>=0.05).*(m<=0.35);
 
 
 int_f_s = @(t) beta*(1-cos(t));
@@ -140,7 +142,7 @@ Vec_m0 = @(t) f(s(t))*Vec_m0;
 %initial condition
 % u0 = 10/3;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = (X<=5).*IC_1_d_m(M);%.*exp(-M);
+IC = (X<5).*IC_1_d_m(M);
 IC1d = sum(IC)/mn;
 IC = IC(:);
 
@@ -346,7 +348,7 @@ switch save_any
         
         
         count = 1;
-        step = floor(tn/6);
+        step = floor(tn/4);
         for i = step:step:tn
             
             figure('units','normalized','outerposition',[0 0 1 1])
@@ -365,10 +367,10 @@ switch save_any
             subplot(3,5,[1 6 11])
 
 %             m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
-            plot([10/3 Soln(t(i),m_fine(2:end-1)) 0],m_fine,'linewidth',1)
-            axis([0 10 0 1])
+            plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',1)
+            axis([0 1.1 0 1])
             hold on
-            plot(dx/5*sum(y(:,:,i),2),m,'r')
+            plot(sum(y(:,:,i),2)/max(sum(y(:,:,i),2)),m,'r')
             hold off
             set(gca,'xdir','reverse')
             ylabel('m')
@@ -376,9 +378,9 @@ switch save_any
             
             set(gcf,'color',[1 1 1])
             
-            exportfig(gcf,['ex3_mx' num2str(count) '.eps'])
-            saveas(gcf,['ex3_mx' num2str(count) '.fig'])
-            
+%             exportfig(gcf,['ex3_mx' num2str(count) '.eps'])
+%             saveas(gcf,['ex3_mx' num2str(count) '.fig'])
+%             
             count = count + 1;
 
         end

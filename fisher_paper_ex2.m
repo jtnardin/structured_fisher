@@ -1,18 +1,20 @@
-%fisher_paper_ex1.m written 10-17-16 by JTN to simulate
+%fisher_paper_ex1.m written 10-19-16 by JTN to simulate
 %u_t + (f(s(t))g(m)u)_m = D(m)*u_xx + lambda(m)*u(1-w) and then compare with
 %nonautonomous fisher equation 
 
-%Example 1 : Threshold at m = 1 : f(s) = 1 , g(m) = m(1-m)
+%Example 2 : Threshold at m = 1 : f(s) = 1 , g(m) = m(1-m)
 
 clear all; clc
 
 
+show_vid = 'no';
 save_any = 'pics'; %pics, vid, none
+prof_diff_plot = 'no';
 
 
 
 %Construct vectors of independent variables
-mn = 81; %number of m points
+mn = 41; %number of m points
 xn = 151; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
@@ -30,22 +32,11 @@ m_fine = [linspace(0,0.1,100) linspace(0.1,0.9,100) linspace(0.9,1,100)];
 %define activation modulus, signal factor, and response to signal factor
 % s = @(t) (1+sin(t));
 
-% s = @(t) 1+sin(t);
-% 
-% f = @(s) 1;
-% 
-% alpha = 0.25;
-
-% g = @(m) alpha*m.*(1-m);%(1-m)/4;
-% sigma_inv = @(t,m) (m*exp(alpha*t))./((1-m)+m*exp(alpha*t));
-% sigma = @(m2,m1) log((m2*(1-m1))./((1-m2)*(m1)))/alpha;
-
-
 alpha = 0.5;
-[g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example1(alpha);
+[g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example2(alpha);
+IC_1_d_m = IC_uniform(.05,.35);
 
-IC_1_d_m = IC_uniform(.05,.35);%@(m) 1*(m>=0).*(m<=0.3);
-Soln = @(t,s) g(sigma_inv(-t,s))./(g(s)).*IC_1_d_m(sigma_inv(-t,s));
+Soln = @(t,s) g(sigma_inv(-int_f_s(t),s))./(g(s)).*IC_1_d_m(sigma_inv(-int_f_s(t),s));
 
 
 %find x locations where D large
@@ -61,8 +52,8 @@ lambda_small = lambda_large*1e-2;
 
 %nonautonomous diffusion, proliferation
 
-D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0,0.3,1./(1+exp(alpha*t)));
-lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0,0.3,1./(1+exp(alpha*t)));
+D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0.05,0.35,1./(1+exp(2-2*cos(t))));
+lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0.05,0.35,1./(1+exp(2-2*cos(t))));
 
 
 %construct boundary points, interior
@@ -135,9 +126,9 @@ Vec_m0 = @(t) f(s(t))*Vec_m0;
 
 
 %initial condition
-u0 = 10/3;
+% u0 = 10/3;
 % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-IC = IC_1_d_m(M).*(X<=5);%.*exp(-M);
+IC = (X<5).*IC_1_d_m(M);
 IC1d = sum(IC)/mn;
 IC = IC(:);
 
@@ -287,58 +278,55 @@ umax = max(max(u));
 zmax = max(max(z));
 
 
-% % %%%make video?
-% % title_m = 'num_sim_mb_pres_exp_periodic.avi';
-% % f1 = figure();
-% % vid = VideoWriter(title_m); %%title here
-% % vid.Quality = 100;
-% % vid.FrameRate = 15;
-% % open(vid);
+switch show_vid
+    
+    case 'yes'
+        % %%%make video?
+        % title_m = 'num_sim_mb_pres_exp_periodic.avi';
+        % f1 = figure();
+        % vid = VideoWriter(title_m); %%title here
+        % vid.Quality = 100;
+        % vid.FrameRate = 15;
+        % open(vid);
 
-% figure('units','normalized','outerposition',[0 0 1 1])
-%     
-% for i = 1:100:tn
-%     subplot(4,4,[2:4 6:8 10:12])
-%     surf(x,m,y(:,:,i),'edgecolor','none')
-%     hold on
-%     title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-%     axis([0 25 0 1 0 umax])
-%     caxis([0,5])
-%     plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-%     %colorbar
-%     view(2)
-%     hold off
-%     subplot(4,4,[14:16])
-%     hold off
-%     plot(x,z(:,i))
-%     hold on
-%     plot(x,z_nonaut(i,:),'color',[0 .5 0])
-%     axis([0 25 0 1.01])
-%     xlabel('x')
-%     pause(.125)
-%     
-%     subplot(4,4,[1 5 9])
-%    
-% %     if sigma_inv(t(i),0.3)>.975
-% %         plot([Soln(t(i),m(1:end-1)) g(0.3)./g(sigma_inv(t(i),0.3))],[m(1:end-1) sigma_inv(t(i),0.3)]);
-% %     else
-% %         plot(Soln(t(i),m),m)
-% %     end
-% %     
-% 
-% 
-%     m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
-%     plot(Soln(t(i),m1),m1)
-%     
-% 
-%     axis([0 10 0 1])
-% 
-%     set(gca,'xdir','reverse')
-%     ylabel('m')
-%     
-%     %     writeVideo(vid, getframe(f1));
-%     
-% end
+        figure('units','normalized','outerposition',[0 0 1 1])
+
+        for i = 1:100:tn
+      
+            subplot(4,4,[2:4 6:8 10:12])
+            surf(x,m,y(:,:,i),'edgecolor','none')
+            hold on
+            title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
+            axis([0 25 0 1 0 max(umax,5)])
+            caxis([0,5])
+            plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+            %colorbar
+            view(2)
+            hold off
+            subplot(4,4,[14:16])
+            hold off
+            plot(x,z(:,i))
+            hold on
+            plot(x,z_nonaut(i,:),'color',[0 .5 0])
+            axis([0 25 0 1.01])
+            xlabel('x')
+            pause(.125)
+
+            subplot(4,4,[1 5 9])
+
+            plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(1)],m_fine)
+
+
+            axis([0 10 0 1])
+
+            set(gca,'xdir','reverse')
+            ylabel('m')
+
+            %     writeVideo(vid, getframe(f1));
+
+        end
+
+end
 
 switch save_any    
     
@@ -353,19 +341,20 @@ switch save_any
             subplot(3,5,[2:5 7:10 15:15])
             contourf(x,m,y(:,:,i),'edgecolor','none')
             hold on
-            title(['u(t,x,m), t = ' num2str(round(t(i))) ', Example 1'])
+            title(['Example 2, u(t = '  num2str(round(t(i))) ',x,m)'])
             xlabel('x')
             axis([0 25 0 1 0 umax])
             caxis([0,5])
             plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-            %colorbar
+%             colorbar
             view(2)
             set(gca,'ytick',[])
             
             subplot(3,5,[1 6 11])
-          
+
+%             m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
             plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)],m_fine,'linewidth',1)
-            axis([0 1.1*max(max(Soln(t(i),m_fine(2:end-1)))) 0 1])
+%             axis([0 1.1 0 1])
             hold on
             plot(dx/5*sum(y(:,:,i),2),m,'r')
             hold off
@@ -373,13 +362,11 @@ switch save_any
             ylabel('m')
             xlabel('u(t,m)')
             
+            set(gcf,'color',[1 1 1])
             
-            
-%             set(gcf,'color',[1 1 1])
-            
-            exportfig(gcf,['ex1_mx' num2str(count) '.eps'])
-            saveas(gcf,['ex1_mx' num2str(count) '.fig'])
-            
+            exportfig(gcf,['ex2_mx' num2str(count) '.eps'])
+            saveas(gcf,['ex2_mx' num2str(count) '.fig'])
+%             
             count = count + 1;
 
         end
@@ -395,14 +382,14 @@ switch save_any
             ylabel('w(x,t)')
 
             
-            legend('Structured simulation','Nonautonomous simulation','location','northeast')
+            legend('Structured simulation','Averaged simulation','location','northeast')
             
 
 
         end
 
-%         exportfig(gcf,['ex1_x_nonaut.eps'])
-%         saveas(gcf,['ex1_x_nonaut.fig'])
+        exportfig(gcf,['ex2_x_nonaut.eps'])
+        saveas(gcf,['ex2_x_nonaut.fig'])
 
         
         
@@ -413,46 +400,88 @@ switch save_any
         figure('units','normalized','outerposition',[0 0 1 1])
 
         for i = 1:100:tn
-            subplot(4,4,[2:4 6:8 10:12])
-
-                surf(x,m,y(:,:,i),'edgecolor','none')
-                hold on
-                title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-                axis([0 25 0 1 0 umax])
-                caxis([0,5])
-                plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-                %colorbar
-                view(2)
-                hold off
             
+            subplot(4,4,[2:4 6:8 10:12])
+            surf(x,m,y(:,:,i),'edgecolor','none')
+            hold on
+            title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
+            axis([0 25 0 1 0 umax])
+            caxis([0,5])
+            plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+            %colorbar
+            view(2)
+            hold off
             subplot(4,4,[14:16])
-                hold off
-                plot(x,z(:,i))
-                hold on
-                plot(x,z_nonaut(i,:),'color',[0 .5 0])
-                axis([0 25 0 1.01])
-                xlabel('x')
-                pause(.125)
+            hold off
+            plot(x,z(:,i))
+            hold on
+            plot(x,z_nonaut(i,:),'color',[0 .5 0])
+            axis([0 25 0 1.01])
+            xlabel('x')
 
             subplot(4,4,[1 5 9])
 
-                plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)],m_fine,'linewidth',1)
-                axis([0 1.1*max(max(Soln(t(i),m_fine(2:end-1)))) 0 1])
-                hold on
-                plot(dx/5*sum(y(:,:,i),2),m,'r')
-                hold off
-                set(gca,'xdir','reverse')
-                ylabel('m')
-                xlabel('u(t,m)')
+        %     if sigma_inv(t(i),0.3)>.975
+        %         plot([Soln(t(i),m(1:end-1)) g(0.3)./g(sigma_inv(t(i),0.3))],[m(1:end-1) sigma_inv(t(i),0.3)]);
+        %     else
+        %         plot(Soln(t(i),m),m)
+        %     end
+        %     
 
 
-                axis([0 10 0 1])
+%             m1 = [linspace(0,sigma_inv(t(i),0.3),100) .99999999];
+            plot(Soln(t(i),m),m)
 
-                set(gca,'xdir','reverse')
-                ylabel('m')
+
+            axis([0 10 0 1])
+
+            set(gca,'xdir','reverse')
+            ylabel('m')
+            pause(.125)
 
             %     writeVideo(vid, getframe(f1));
 
         end
+end
+
+switch prof_diff_plot
+    
+    case 'yes'
+        
+            %plot profile when prolif and when diff.
+    figure
+    hold on
+
+    psi = @(t) 1./(1+exp(2-2*cos(t)));
+
+    last_period = find(t>t(end)-4*pi,1,'first');
+
+    %silly trick for making legend -- plot on top of self.
+    plot(x,z(:,last_period),'b','linewidth',1)
+    plot(x,z(:,last_period),'r','linewidth',1)
+
+    for i = last_period:750:tn
+        if psi(t(i)) > .15
+            m_col = 'b';
+        else
+            m_col = 'r';
+        end
+
+        plot(x,z(:,i),m_col,'linewidth',1)
+    end
+
+    xlabel('x')
+    ylabel('w(t,x)')
+
+    axis([0 30 0 1.1])
+
+    title('Nonautonomous Structured Fisher Equation')
+
+    legend('Proliferating','Diffusing')
+
+    exportfig(gcf,['nonaut_fisher_profile_ex2.eps'])
+    saveas(gcf,['nonaut_fisher_profile_ex2.fig'])
+
+
 end
 

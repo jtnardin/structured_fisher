@@ -9,20 +9,20 @@ clear all; clc
 
 %grid
 t = linspace(0,15,3000);
-s = linspace(0,1,40);
+s = linspace(0,1,80);
 [T,S] = meshgrid(t,s);
 
 %load in g, sigma, sigma_inv, etc. functions
-[g,sigma,sigma_inv,s_t,f,int_f_s] = g_sigma_h_example1;
+alpha = 0.5;
+[g,sigma,sigma_inv,s_t,f,int_f_s] = g_sigma_h_example3(alpha);
 
 
 %initial condition
 phi = IC_uniform(.05,.35);
 
 
-
 %%%%% generate analytic solution based on (Webb 2008)
-Soln = @(t,s) g(sigma_inv(-t,s))./(g(s)).*phi(sigma_inv(-t,s));%.*(sigma_inv(t,1)<s);
+Soln = @(t,s) g(sigma_inv(-int_f_s(t),s))./(g(s)).*phi(sigma_inv(-int_f_s(t),s));%.*(sigma_inv(t,1)<s);
 %Exact soln matrix
 A = Soln(T,S);
 
@@ -58,13 +58,13 @@ Vw = V(1:end-1);
 Ve_s0 = V(1);
 Vw_s1 = V(end);
 
-Vec = @(t) Ve'*dt/ds;
+Vec = @(t) f(s_t(t))*Ve'*dt/ds;
 
-Vwc = @(t) Vw'*dt/ds;
+Vwc = @(t) f(s_t(t))*Vw'*dt/ds;
 
-Vec_s0 = @(t) Ve_s0'*dt/ds;
+Vec_s0 = @(t) f(s_t(t))*Ve_s0'*dt/ds;
 
-Vwc_s1 = @(t) Vw_s1'*dt/ds;
+Vwc_s1 = @(t) f(s_t(t))*Vw_s1'*dt/ds;
 
 
 %measure of implicitness (1 = backward euler, 0 = forward euler, 1/2 =
@@ -83,6 +83,16 @@ A_pos_s0 = @(se,ve,ind,dn) sparse([ind ind],[ind ind+dn],[ve.*(1-1*se/2); ve.*se
 
 A_pos_s1 = @(sw,vw,ind,dn) sparse([ind ind],[ind-dn ind],[vw.*(-1+sw/2); ...
     (-vw.*sw/2)],sn,sn);
+
+A_neg = @(se,sw,ve,vw,ind,dn) sparse([ind ind ind],[ind-dn ind ind+dn],[(-vw.*sw/2); ...
+    (ve.*se/2+vw.*sw/2-vw); (ve-ve.*se/2)],sn,sn);
+
+A_neg_s1 = @(sw,vw,ind,dn) sparse([ind ind],[ind-dn ind],[(-vw.*sw/2); ...
+    (vw.*sw/2-vw)],sn,sn);
+
+A_neg_s0 = @(se,ve,ind,dn) sparse([ind ind],[ind ind+dn],[ve.*se/2; (ve-ve.*se/2)],sn,sn);
+
+
     
 %initialize
 u = zeros(sn,tn);
@@ -92,24 +102,30 @@ tic
 
 for i = 2:tn
     
-    [r_e,r_w,r_w_s1,r_e_s1] = positive_sensor(u(:,i-1),s_int,s_bd_n,s_bd_0,s_bd_1_int,s_bd_nm1_int);
+    
+    if f(s_t(t(i))) >= 0
+    
+        [r_e,r_w,r_w_s1,r_e_s1] = positive_sensor(u(:,i-1),s_int,s_bd_n,s_bd_0,s_bd_1_int,s_bd_nm1_int);
         %construct matrices
         A_int = A_pos(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),s_int,1);
         A_s1 = A_pos_s1(sigma(r_w_s1),Vwc_s1(t(i)),s_bd_n,1);
         A_s0 = A_pos_s0(sigma(r_e_s1),Vec_s0(t(i)),s_bd_0,1);
-    
-%     
-%     %compute interior points
-%     u(:,i) = (speye(total) + theta*(A_pos(sigma(r_e),sigma(r_w),Vec,Vwc,s_int,1)...
-%         + A_pos_m1(sigma(r_w_m1),Vwc_m1,m_bd_1,1)))\((speye(total)...
-%         - (1-theta)*(A_pos(sigma(r_e),sigma(r_w),Vec,Vwc,s_int,1)...
-%         + A_pos_m1(sigma(r_w_m1),Vwc_m1,m_bd_1,1)))*u(:,i-1)); %+ ...
-%         %dt*u(:,i-1).*(1-u(:,i-1)));
-   
-    u(:,i) = (speye(sn) + theta*(A_int + A_s1 + A_s0))\(speye(sn)...
-        - (1-theta)*(A_int + A_s1 + A_s0))*u(:,i-1); 
+        
+    else
   
         
+        [r_e,r_w,r_w_s1,r_e_s1] = negative_sensor(u(:,i-1),s_int,s_bd_n,s_bd_0,s_bd_1_int,s_bd_nm1_int);
+        %construct matrices
+        A_int = A_neg(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),s_int,1);
+        A_s1 = A_neg_s1(sigma(r_w_s1),Vwc_s1(t(i)),s_bd_n,1);
+        A_s0 = A_neg_s0(sigma(r_e_s1),Vec_s0(t(i)),s_bd_0,1);
+        
+    end  
+        
+        
+    u(:,i) = (speye(sn) + theta*(A_int + A_s1 + A_s0))\(speye(sn)...
+        - (1-theta)*(A_int + A_s1 + A_s0))*u(:,i-1); 
+         
 
 end
 
