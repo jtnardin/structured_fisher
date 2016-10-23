@@ -251,7 +251,8 @@ for i = 2:tn
         A_m0 = A_neg_m0(sigma(r_e_m1),Vec_m0(t(i)),m_bd_0,1);
     end
     
-    %integrate over m (just riemann for now)
+    %integrate over m (just riemann for now -- recall scheme is 1st order
+    %accurate around steep areas)
     w = dm*accumarray(integ_mat,u(:,i-1));
     w = repmat(w',mn,1);
     w = w(:);

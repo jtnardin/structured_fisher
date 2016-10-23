@@ -27,20 +27,6 @@ m_fine = [linspace(0,0.1,100) linspace(0.1,0.9,100) linspace(0.9,1,100)];
 
 
 
-%define activation modulus, signal factor, and response to signal factor
-% s = @(t) (1+sin(t));
-
-% s = @(t) 1+sin(t);
-% 
-% f = @(s) 1;
-% 
-% alpha = 0.25;
-
-% g = @(m) alpha*m.*(1-m);%(1-m)/4;
-% sigma_inv = @(t,m) (m*exp(alpha*t))./((1-m)+m*exp(alpha*t));
-% sigma = @(m2,m1) log((m2*(1-m1))./((1-m2)*(m1)))/alpha;
-
-
 alpha = 0.5;
 [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example1(alpha);
 
@@ -287,120 +273,125 @@ umax = max(max(u));
 zmax = max(max(z));
 
 
-% % %%%make video?
-% % title_m = 'num_sim_mb_pres_exp_periodic.avi';
-% % f1 = figure();
-% % vid = VideoWriter(title_m); %%title here
-% % vid.Quality = 100;
-% % vid.FrameRate = 15;
-% % open(vid);
-
-% figure('units','normalized','outerposition',[0 0 1 1])
-%     
-% for i = 1:100:tn
-%     subplot(4,4,[2:4 6:8 10:12])
-%     surf(x,m,y(:,:,i),'edgecolor','none')
-%     hold on
-%     title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-%     axis([0 25 0 1 0 umax])
-%     caxis([0,5])
-%     plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-%     %colorbar
-%     view(2)
-%     hold off
-%     subplot(4,4,[14:16])
-%     hold off
-%     plot(x,z(:,i))
-%     hold on
-%     plot(x,z_nonaut(i,:),'color',[0 .5 0])
-%     axis([0 25 0 1.01])
-%     xlabel('x')
-%     pause(.125)
-%     
-%     subplot(4,4,[1 5 9])
-%    
-% %     if sigma_inv(t(i),0.3)>.975
-% %         plot([Soln(t(i),m(1:end-1)) g(0.3)./g(sigma_inv(t(i),0.3))],[m(1:end-1) sigma_inv(t(i),0.3)]);
-% %     else
-% %         plot(Soln(t(i),m),m)
-% %     end
-% %     
-% 
-% 
-%     m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
-%     plot(Soln(t(i),m1),m1)
-%     
-% 
-%     axis([0 10 0 1])
-% 
-%     set(gca,'xdir','reverse')
-%     ylabel('m')
-%     
-%     %     writeVideo(vid, getframe(f1));
-%     
-% end
-
 switch save_any    
     
     case 'pics'
         
+%         count = 1;
+%         step = floor(tn/4);
+%         for i = step:step:tn
+%             
+%             figure('units','normalized','outerposition',[0 0 1 1])
+%             subplot(3,5,[2:5 7:10 15:15])
+%             contourf(x,m,y(:,:,i),'edgecolor','none')
+%             hold on
+%             title(['Example 1, u(t = '  num2str(round(t(i))) ',x,m)'])
+%             xlabel('x')
+%             axis([0 25 0 1 0 umax])
+%             caxis([0,5])
+%             plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+%             %colorbar
+%             view(2)
+%             set(gca,'ytick',[])
+%             
+%             subplot(3,5,[1 6 11])
+%           
+%             plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)],m_fine,'linewidth',1)
+%             axis([0 1.1*max(max(Soln(t(i),m_fine(2:end-1)))) 0 1])
+%           
+%             set(gca,'xdir','reverse')
+%             ylabel('m')
+%             xlabel('u(t,m)')
+%             
+%             
+%             
+% %             set(gcf,'color',[1 1 1])
+%             
+%             exportfig(gcf,['ex1_mx' num2str(count) '.eps'])
+%             saveas(gcf,['ex1_mx' num2str(count) '.fig'])
+%             
+%             count = count + 1;
+% 
+%         end
         
         count = 1;
-        step = floor(tn/4);
-        for i = step:step:tn
+        step = floor(tn/8);
+        for i = step:step:tn/2
+            
             
             figure('units','normalized','outerposition',[0 0 1 1])
-            subplot(3,5,[2:5 7:10 15:15])
-            contourf(x,m,y(:,:,i),'edgecolor','none')
-            hold on
-            title(['u(t,x,m), t = ' num2str(round(t(i))) ', Example 1'])
-            xlabel('x')
-            axis([0 25 0 1 0 umax])
-            caxis([0,5])
-            plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-            %colorbar
-            view(2)
-            set(gca,'ytick',[])
             
-            subplot(3,5,[1 6 11])
+%             ylim = get(gca,'ylim');
+%             xlim = get(gca,'xlim');
+%             
+%             axes('Position',[.005 .005 .99 .99],'xtick',[],'ytick',[],'box','on','handlevisibility','off')
+            subplot(5,5,[2:5 7:10 12:15])
+            
+                contourf(x,m,y(:,:,i),'edgecolor','none')
+                hold on
+                title(['Example 1, u(t = '  num2str(round(t(i))) ',x,m)'],'fontsize',40)
+    %             xlabel('x','fontsize',30)
+                axis([0 13 0 1 0 umax])
+                caxis([0,5])
+                plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+                %colorbar
+                view(2)
+                set(gca,'ytick',[])
+                set(gca,'xtick',[])
+            
+            subplot(5,5,[1 6 11])
           
-            plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)],m_fine,'linewidth',1)
-            axis([0 1.1*max(max(Soln(t(i),m_fine(2:end-1)))) 0 1])
-            hold on
-            plot(dx/5*sum(y(:,:,i),2),m,'r')
-            hold off
-            set(gca,'xdir','reverse')
-            ylabel('m')
-            xlabel('u(t,m)')
+                plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',6)
+                axis([0 1.1 0 1])
+
+                set(gca,'xdir','reverse','fontsize',30)
+                ylabel('m','fontsize',30)
+                xlabel('u(t,m)','fontsize',30)
+                
+                %label for plots
+                text(1.5,1.1,['(' char(96+count) ')'],'fontsize',30)
             
+          
+            subplot(5,5,[17:20 22:25])
             
+                plot(x,z(:,i),'linewidth',6)
+                hold on
+                plot(x,z_nonaut(i,:),'color',[0 .5 0],'linewidth',6)
+                axis([0 13 0 1.11])
+                xlabel('x','fontsize',30)
+                ylabel('w(t,x)','fontsize',30)
+                set(gca,'fontsize',30)
+
+                if count == 1
+                    h=legend('Structured simulation','Nonautonomous simulation','location','northeast');
+                    set(h,'fontsize',30)
+                end
+                set(gcf,'color',[1 1 1])
             
-%             set(gcf,'color',[1 1 1])
-            
-            exportfig(gcf,['ex1_mx' num2str(count) '.eps'])
-            saveas(gcf,['ex1_mx' num2str(count) '.fig'])
+                
+            export_fig(gcf,['ex1_mx' num2str(count) '_take2.eps'])
+            saveas(gcf,['ex1_mx' num2str(count) '_take2.fig'])
             
             count = count + 1;
 
         end
         
-        figure
         
-        for i = step:step:tn
-            plot(x,z(:,i))
-            hold on
-            plot(x,z_nonaut(i,:),'color',[0 .5 0])
-            axis([0 25 0 1.01])
-            xlabel('x')
-            ylabel('w(x,t)')
-
-            
-            legend('Structured simulation','Nonautonomous simulation','location','northeast')
-            
-
-
-        end
-
+%         figure
+%         
+%         for i = step:step:tn
+%             plot(x,z(:,i))
+%             hold on
+%             plot(x,z_nonaut(i,:),'color',[0 .5 0])
+%             axis([0 25 0 1.01])
+%             xlabel('x')
+%             ylabel('w(x,t)')
+% 
+%             
+%             legend('Structured simulation','Nonautonomous simulation','location','northeast')
+%          
+%         end
+% 
 %         exportfig(gcf,['ex1_x_nonaut.eps'])
 %         saveas(gcf,['ex1_x_nonaut.fig'])
 
@@ -409,6 +400,14 @@ switch save_any
         
     case 'video'
         
+        % %%%make video?
+        % title_m = 'num_sim_mb_pres_exp_periodic.avi';
+        % f1 = figure();
+        % vid = VideoWriter(title_m); %%title here
+        % vid.Quality = 100;
+        % vid.FrameRate = 15;
+        % open(vid);
+
 
         figure('units','normalized','outerposition',[0 0 1 1])
 

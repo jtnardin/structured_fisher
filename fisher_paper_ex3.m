@@ -347,65 +347,126 @@ switch save_any
     case 'pics'
         
         
+%         count = 1;
+%         step = floor(tn/4);
+%         for i = step:step:tn
+%             
+%             figure('units','normalized','outerposition',[0 0 1 1])
+%             subplot(3,5,[2:5 7:10 15:15])
+%             contourf(x,m,y(:,:,i),'edgecolor','none')
+%             hold on
+%             title(['Example 3, u(t = '  num2str(round(t(i))) ',x,m)'])
+%             xlabel('x')
+%             axis([0 25 0 1 0 umax])
+%             caxis([0,5])
+%             plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+% %             colorbar
+%             view(2)
+%             set(gca,'ytick',[])
+%             
+%             subplot(3,5,[1 6 11])
+% 
+% %             m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
+%             plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',1)
+%             axis([0 1.1 0 1])
+%             hold on
+%             plot(sum(y(:,:,i),2)/max(sum(y(:,:,i),2)),m,'r')
+%             hold off
+%             set(gca,'xdir','reverse')
+%             ylabel('m')
+%             xlabel('u(t,m)')
+%             
+%             set(gcf,'color',[1 1 1])
+%             
+% %             exportfig(gcf,['ex3_mx' num2str(count) '.eps'])
+% %             saveas(gcf,['ex3_mx' num2str(count) '.fig'])
+% %             
+%             count = count + 1;
+% 
+%         end
+%         
+%         figure
+%         
+%         for i = step:step:tn
+%             plot(x,z(:,i))
+%             hold on
+%             plot(x,z_nonaut(i,:),'color',[0 .5 0])
+%             axis([0 25 0 1.01])
+%             xlabel('x')
+%             ylabel('w(x,t)')
+% 
+%             
+%             legend('Structured simulation','Averaged simulation','location','northeast')
+%             
+% 
+% 
+%         end
+% 
+%         exportfig(gcf,['ex3_x_nonaut.eps'])
+%         saveas(gcf,['ex3_x_nonaut.fig'])
+
+
         count = 1;
-        step = floor(tn/4);
+        step = floor(tn/6);
         for i = step:step:tn
             
+            
             figure('units','normalized','outerposition',[0 0 1 1])
-            subplot(3,5,[2:5 7:10 15:15])
-            contourf(x,m,y(:,:,i),'edgecolor','none')
-            hold on
-            title(['Example 3, u(t = '  num2str(round(t(i))) ',x,m)'])
-            xlabel('x')
-            axis([0 25 0 1 0 umax])
-            caxis([0,5])
-            plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-%             colorbar
-            view(2)
-            set(gca,'ytick',[])
             
-            subplot(3,5,[1 6 11])
+%             axes('Position',[.005 .005 .99 .99],'xtick',[],'ytick',[],'box','on','handlevisibility','off')
+            subplot(5,5,[2:5 7:10 12:15])
+            
+                contourf(x,m,y(:,:,i),'edgecolor','none')
+                hold on
+                title(['Example 3, u(t = '  num2str(round(t(i))) ',x,m)'],'fontsize',40)
+    %             xlabel('x','fontsize',30)
+                axis([0 25 0 1 0 umax])
+                caxis([0,5])
+                plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+                %colorbar
+                view(2)
+                set(gca,'ytick',[])
+                set(gca,'xtick',[])
+            
+            subplot(5,5,[1 6 11])
+          
+                plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',6)
+                axis([0 1.1 0 1])
 
-%             m1 = [linspace(0,sigma_inv(t(i),0.3),100) 1];
-            plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',1)
-            axis([0 1.1 0 1])
-            hold on
-            plot(sum(y(:,:,i),2)/max(sum(y(:,:,i),2)),m,'r')
-            hold off
-            set(gca,'xdir','reverse')
-            ylabel('m')
-            xlabel('u(t,m)')
+                set(gca,'xdir','reverse','fontsize',30)
+                ylabel('m','fontsize',30)
+                xlabel('u(t,m)','fontsize',30)
+                
+                %label for plots
+                text(1.5,1.1,['(' char(96+count) ')'],'fontsize',30)
             
-            set(gcf,'color',[1 1 1])
+          
+            subplot(5,5,[17:20 22:25])
             
-%             exportfig(gcf,['ex3_mx' num2str(count) '.eps'])
-%             saveas(gcf,['ex3_mx' num2str(count) '.fig'])
-%             
+                plot(x,z(:,i),'linewidth',6)
+                hold on
+                plot(x,z_nonaut(i,:),'color',[0 .5 0],'linewidth',6)
+                axis([0 25 0 1.11])
+                xlabel('x','fontsize',30)
+                ylabel('w(t,x)','fontsize',30)
+                set(gca,'fontsize',30)
+
+                if count == 1
+                    h=legend('Structured simulation','Nonautonomous simulation','location','northeast');
+                    set(h,'fontsize',30)
+                end
+                set(gcf,'color',[1 1 1])
+            
+                
+            export_fig(gcf,['ex3_mx' num2str(count) '_take2.eps'])
+            saveas(gcf,['ex3_mx' num2str(count) '_take2.fig'])
+            
             count = count + 1;
 
         end
-        
-        figure
-        
-        for i = step:step:tn
-            plot(x,z(:,i))
-            hold on
-            plot(x,z_nonaut(i,:),'color',[0 .5 0])
-            axis([0 25 0 1.01])
-            xlabel('x')
-            ylabel('w(x,t)')
-
-            
-            legend('Structured simulation','Averaged simulation','location','northeast')
-            
 
 
-        end
 
-        exportfig(gcf,['ex3_x_nonaut.eps'])
-        saveas(gcf,['ex3_x_nonaut.fig'])
-
-        
         
         
     case 'video'
