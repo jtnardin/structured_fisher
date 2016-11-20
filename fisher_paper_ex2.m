@@ -7,18 +7,18 @@
 clear all; clc
 
 
-show_vid = 'no';
-save_any = 'pics'; %pics, vid, none
+show_vid = 'yes';
+save_any = 'no'; %pics, vid, none
 prof_diff_plot = 'no';
-
+isosurface_plot = 'no';
 
 
 %Construct vectors of independent variables
-mn = 41; %number of m points
+mn = 161; %number of m points
 xn = 151; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
-t = 0:dt:15;
+t = 0:dt:20;
 m = linspace(0,1,mn);
 dm = m(2) - m(1);
 x = linspace(0,30,xn);
@@ -32,8 +32,12 @@ m_fine = [linspace(0,0.1,100) linspace(0.1,0.9,100) linspace(0.9,1,100)];
 %define activation modulus, signal factor, and response to signal factor
 % s = @(t) (1+sin(t));
 
-alpha = 0.5;
-[g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example2(alpha);
+alpha = 1;
+% beta = 2.005;
+beta = 2.55;
+gamma = -1;
+
+[g,sigma,sigma_inv,s,f,int_f_s,psi] = g_sigma_h_example2(alpha,beta,gamma);
 IC_1_d_m = IC_uniform(.05,.35);
 
 Soln = @(t,s) g(sigma_inv(-int_f_s(t),s))./(g(s)).*IC_1_d_m(sigma_inv(-int_f_s(t),s));
@@ -52,8 +56,8 @@ lambda_small = lambda_large*1e-2;
 
 %nonautonomous diffusion, proliferation
 
-D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0.05,0.35,1./(1+exp(2-2*cos(t))));
-lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0.05,0.35,1./(1+exp(2-2*cos(t))));
+D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0.05,0.35,psi(t));
+lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0.05,0.35,psi(t));
 
 
 %construct boundary points, interior
@@ -298,7 +302,7 @@ switch show_vid
             hold on
             title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
             axis([0 25 0 1 0 max(umax,5)])
-            caxis([0,5])
+            caxis([0,10])
             plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
             %colorbar
             view(2)
@@ -447,9 +451,9 @@ switch save_any
                 set(gcf,'color',[1 1 1])
             
                 
-            export_fig(gcf,['ex2_mx' num2str(count) '_take2.eps'])
-            saveas(gcf,['ex2_mx' num2str(count) '_take2.fig'])
-            
+%             export_fig(gcf,['ex2_mx' num2str(count) '_take2.eps'])
+%             saveas(gcf,['ex2_mx' num2str(count) '_take2.fig'])
+%             
             count = count + 1;
 
         end
@@ -462,9 +466,18 @@ switch save_any
     case 'video'
         
 
-        figure('units','normalized','outerposition',[0 0 1 1])
+         %%%make video?
+        title_m = 'dynamics_pulse.avi';
+        f1 = figure();
+        vid = VideoWriter(title_m); %%title here
+        vid.Quality = 100;
+        vid.FrameRate = 15;
+        open(vid);
 
-        for i = 1:100:tn
+        
+%         figure('units','normalized','outerposition',[0 0 1 1])
+
+        for i = 1:250:tn
             
             subplot(4,4,[2:4 6:8 10:12])
             surf(x,m,y(:,:,i),'edgecolor','none')
@@ -502,11 +515,14 @@ switch save_any
 
             set(gca,'xdir','reverse')
             ylabel('m')
-            pause(.125)
+%             pause(.125)
 
-            %     writeVideo(vid, getframe(f1));
+            writeVideo(vid, getframe(f1));
 
         end
+        
+        close(vid)
+        
 end
 
 switch prof_diff_plot
@@ -549,4 +565,33 @@ switch prof_diff_plot
 
 
 end
+
+
+
+switch isosurface_plot
+    
+    case 'yes'
+        
+        figure
+        set(gcf,'units','normalized')
+        p = patch(isosurface(x,m,t(1:10:end),y(:,:,1:10:end), 1));
+        isonormals(x,m,t(1:10:end),y(:,:,1:10:end),p);
+        set(p,'facecolor',[.5 .5 .5],'edgecolor','none')
+        camlight right
+        view([1,1,1])
+        xlabel('x')
+        ylabel('m')
+        zlabel('t')
+        
+        title('isocline for example 2')
+        
+        export_fig(gcf,'isocline2.eps')
+        saveas(gcf,'isocline2.fig')
+        
+        
+        
+end
+
+
+
 

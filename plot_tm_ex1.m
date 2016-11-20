@@ -3,26 +3,57 @@ s = linspace(0,1,400);
 
 [T,S] = meshgrid(t,s);
 
-alpha = 1/2;
+alpha = 1;
 
-g = @(s) alpha*s.*(1-s);
+[g,sigma,sigma_inv,s_t,f,int_f_s] = g_sigma_h_example1(alpha);
 
-sigma_inv = @(t,m) (m.*exp(alpha*t))./((1-m)+m.*exp(alpha*t));
-
-phi = @(m) 10/3*(m>=0).*(m<=0.3);
+phi = IC_uniform(0.05,0.35);
 
 Soln = @(t,s) g(sigma_inv(-t,s))./(g(s)).*phi(sigma_inv(-t,s));
 
 A = Soln(T,S);
+%make white in plot
+A(A==0)=NaN;
 
-figure
+A(S==0)=phi(s(1));
+A(S==1)=phi(s(end));
 
-contourf(T,S,A,'edgecolor','none')
+figure(1)
+hold on
 
-title('$\sigma^{-1}(t;\underline{m})$, Example 1','interpreter','latex')
-xlabel('t')
-ylabel('m')
+B = log(A);
 
+B(isinf(B))=NaN;
+
+contourf(T,S,B,'edgecolor','none')
+
+%plot characteristics
+plot(t,sigma_inv(int_f_s(t),0.35),'color','k','linewidth',1)
+plot(t,sigma_inv(int_f_s(t),0.15),'color','k','linewidth',1)
+plot(t,sigma_inv(int_f_s(t),0.05),'color','k','linewidth',1)
+
+
+%plot m = 0.5
+
+plot([-2 7],[.5 .5],'k--','linewidth',0.5)
+text(3.25,.45,'Subpopulation 1','fontsize',20)
+text(3.25,.55,'Subpopulation 2','fontsize',20)
+
+title('Activation Distribution over time for Example 1','interpreter','latex')
+xlabel('Time (t) ')
+ylabel('Activation level (m)')
+
+axis([0 5 0 1])
+
+caxis([min(min(log(A(A~=0)))) max(max(log(A)))]/1.5)
+
+map1 = ones(500,1); 
+unitgrad = linspace(0,1,500);
+
+map = [flipud(unitgrad') flipud(unitgrad') map1 ];
+
+
+colormap(map)
 colorbar
 view(2)
 

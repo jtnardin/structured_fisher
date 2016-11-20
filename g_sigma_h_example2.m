@@ -1,6 +1,6 @@
 %%%g_sigma_h_example2.m written 10-19-16 by JTN to give all functions
 %%%necessary for example 2 in structured fisher paper
-function [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example2(alpha,beta,gamma)
+function [g,sigma,sigma_inv,s,f,int_f_s,psi] = g_sigma_h_example2(alpha,beta,gamma)
 
     if nargin == 1
         beta = 3;
@@ -20,5 +20,7 @@ function [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example2(alpha,beta,gamma)
     s = @(t) beta*exp(gamma*t);
     
     int_f_s = @(t) beta/gamma*(exp(gamma*t)-1)-t;
+    
+    psi = @(t) 1./(1+exp(-alpha*t+alpha*beta/gamma*(exp(gamma*t)-1)));
     
 end

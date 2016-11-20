@@ -1,6 +1,6 @@
 %%%g_sigma_h_example1.m written 10-19-16 by JTN to give all functions
 %%%necessary for example 1 in structured fisher paper
-function [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example1(alpha)
+function [g,sigma,sigma_inv,s,f,int_f_s,psi] = g_sigma_h_example1(alpha)
 
 %     alpha = 0.5;
     
@@ -14,4 +14,6 @@ function [g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example1(alpha)
     f = @(s) 1;
     
     int_f_s = @(t) t;
+    
+    psi = @(t) 1./(1+exp(alpha*t));
 end

@@ -16,32 +16,42 @@ A = Soln(T,S);
 A(S==0)=phi(s(1));
 A(S==1)=phi(s(end));
 
-
 B = log(A);
-
+B(isinf(B))=NaN;
 
 figure
 hold on
 
 contourf(T,S,B,'edgecolor','none')
 
-plot(t,sigma_inv(int_f_s(t),0.35),'color',[0.5 0.5 0.5],'linewidth',1)
-
-% h=legend('Distribution of m','$h(t;\underline{m})$');
-% set(h,'interpreter','latex')
-
-plot(t,sigma_inv(int_f_s(t),0.15),'color',[0.5 0.5 0.5],'linewidth',1)
-plot(t,sigma_inv(int_f_s(t),0.05),'color',[0.5 0.5 0.5],'linewidth',1)
-
-% caxis([min(min(log(A(A~=0)))) max(max(log(A)))])
+plot(t,sigma_inv(int_f_s(t),0.35),'color','k','linewidth',1)
+plot(t,sigma_inv(int_f_s(t),0.15),'color','k','linewidth',1)
+plot(t,sigma_inv(int_f_s(t),0.05),'color','k','linewidth',1)
 
 
-title('Distribution along $m$ over time in Example 2','interpreter','latex')
-xlabel('t')
-ylabel('m')
+%plot m = 0.5
+
+plot([-2 17],[.5 .5],'k--','linewidth',0.5)
+text(8,.45,'Subpopulation 1','fontsize',20)
+text(8,.55,'Subpopulation 2','fontsize',20)
+
+axis([0 15 0 1])
+
+title('Activation Distribution over time for Example 2','interpreter','latex')
+xlabel(' Time (t) ')
+ylabel(' Activation level (m) ')
 
 
 view(2)
+
+
+map1 = ones(500,1); 
+unitgrad = linspace(0,1,500);
+
+map = [flipud(unitgrad') flipud(unitgrad') map1 ];
+
+
+colormap(map)
 
 caxis([min(min(log(A(A~=0)))) max(max(log(A)))])
 colorbar

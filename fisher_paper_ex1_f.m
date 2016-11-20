@@ -4,18 +4,18 @@
 
 %Example 1 : Threshold at m = 1 : f(s) = 1 , g(m) = m(1-m)
 
-function [y,z] = fisher_paper_ex1_f(alpha)
+function z = fisher_paper_ex1_f(alpha)
 
 
     %Construct vectors of independent variables
     mn = 81; %number of m points
-    xn = 151; %number of x points
+    xn = 301; %number of x points
     total = mn*xn;
     dt = 1e-3; %time step
-    t = 0:dt:15;
+    t = 0:dt:30;
     m = linspace(0,1,mn);
     dm = m(2) - m(1);
-    x = linspace(0,30,xn);
+    x = linspace(0,60,xn);
     dx = x(2) - x(1);
     [X,M] = meshgrid(x,m);
     tn = length(t);

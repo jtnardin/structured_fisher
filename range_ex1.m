@@ -2,13 +2,12 @@ clear all; clc
 
 alpha = .1:.1:1;
 
-y = cell(length(alpha),1);
 z = cell(length(alpha),1);
 
 
 for i = 1:length(alpha)
     i
-    [y{i},z{i}] = fisher_paper_ex1_f(alpha(i));
+    z{i} = fisher_paper_ex1_f(alpha(i));
 end
 
 mn = 81; %number of m points

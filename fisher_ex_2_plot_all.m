@@ -7,13 +7,12 @@
 clear all; clc
 
 
-save_any = 'no'; %pics, vid, none
-isosurface_plot = 'yes';
+save_pic = 'yes'; %pics, vid, none
 
 
 
 %Construct vectors of independent variables
-mn = 81; %number of m points
+mn = 161; %number of m points
 xn = 151; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
@@ -27,12 +26,15 @@ tn = length(t);
 m_fine = [linspace(0,0.1,100) linspace(0.1,0.9,100) linspace(0.9,1,100)];
 
 
-
 alpha = 0.5;
-[g,sigma,sigma_inv,s,f,int_f_s] = g_sigma_h_example1(alpha);
+% beta = 2.005;
+beta = 3;
+gamma = -1/4;
 
-IC_1_d_m = IC_uniform(.05,.35);%@(m) 1*(m>=0).*(m<=0.3);
-Soln = @(t,s) g(sigma_inv(-t,s))./(g(s)).*IC_1_d_m(sigma_inv(-t,s));
+[g,sigma,sigma_inv,s,f,int_f_s,psi] = g_sigma_h_example2(alpha,beta,gamma);
+IC_1_d_m = IC_uniform(.05,.35);
+
+Soln = @(t,s) g(sigma_inv(-int_f_s(t),s))./(g(s)).*IC_1_d_m(sigma_inv(-int_f_s(t),s));
 
 
 %find x locations where D large
@@ -48,8 +50,8 @@ lambda_small = lambda_large*1e-2;
 
 %nonautonomous diffusion, proliferation
 
-D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0,0.3,1./(1+exp(alpha*t)));
-lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0,0.3,1./(1+exp(alpha*t)));
+D_nonaut = @(t) D_large + (D_small - D_large)*uniform_cdf(0.05,0.35,psi(t));
+lambda_nonaut = @(t) lambda_small + (lambda_large - lambda_small)*uniform_cdf(0.05,0.35,psi(t));
 
 
 %construct boundary points, interior
@@ -258,11 +260,11 @@ toc
 
 %y for visualization
 y = zeros(mn,xn,tn);
-z = zeros(xn,tn);
+z_tx = zeros(xn,tn);
 
 for i = 1:tn
     y(:,:,i) = reshape(u(:,i),mn,xn);
-    z(:,i) = dm*sum(y(:,:,i));
+    z_tx(:,i) = dm*sum(y(:,:,i));
 end
 
 % %now compare with homogenized eqn
@@ -271,214 +273,145 @@ end
 z_nonaut = RD_sim_nonaut_ex1(D_nonaut,lambda_nonaut,t,x,IC1d);
 
 umax = max(max(u));
-zmax = max(max(z));
+zmax = max(max(z_tx));
 
 
-switch save_any    
+switch save_pic   
     
-    case 'pics'
+    case 'yes'
         
-%         count = 1;
-%         step = floor(tn/4);
-%         for i = step:step:tn
-%             
-%             figure('units','normalized','outerposition',[0 0 1 1])
-%             subplot(3,5,[2:5 7:10 15:15])
-%             contourf(x,m,y(:,:,i),'edgecolor','none')
-%             hold on
-%             title(['Example 1, u(t = '  num2str(round(t(i))) ',x,m)'])
-%             xlabel('x')
-%             axis([0 25 0 1 0 umax])
-%             caxis([0,5])
-%             plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-%             %colorbar
-%             view(2)
-%             set(gca,'ytick',[])
-%             
-%             subplot(3,5,[1 6 11])
-%           
-%             plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)],m_fine,'linewidth',1)
-%             axis([0 1.1*max(max(Soln(t(i),m_fine(2:end-1)))) 0 1])
-%           
-%             set(gca,'xdir','reverse')
-%             ylabel('m')
-%             xlabel('u(t,m)')
-%             
-%             
-%             
-% %             set(gcf,'color',[1 1 1])
-%             
-%             exportfig(gcf,['ex1_mx' num2str(count) '.eps'])
-%             saveas(gcf,['ex1_mx' num2str(count) '.fig'])
-%             
-%             count = count + 1;
-% 
-%         end
         
+        
+%      fig_final = figure('units','normalized','outerposition',[0 0 1 1]);
+
+               
         count = 1;
-        step = floor(tn/8);
-        for i = step:step:tn/2
+        step = floor(tn/3);
+        for i = step:step:tn
+        
+            fig_final = figure('units','normalized','outerposition',[0 0 1 1]);
             
-            
-            figure('units','normalized','outerposition',[0 0 1 1])
-            
-%             ylim = get(gca,'ylim');
-%             xlim = get(gca,'xlim');
-%             
-%             axes('Position',[.005 .005 .99 .99],'xtick',[],'ytick',[],'box','on','handlevisibility','off')
-            subplot(5,5,[2:5 7:10 12:15])
-            
+%             subplot(18,10,60*(count-1)+[2:5 12:15 22:25])
+                subplot(2,1,1)
+
                 contourf(x,m,y(:,:,i),'edgecolor','none')
                 hold on
-                title(['Example 1, u(t = '  num2str(round(t(i))) ',x,m)'],'fontsize',40)
-    %             xlabel('x','fontsize',30)
+                title(['Example 2, u(t = '  num2str(round(t(i))) ',x,m)'],'fontsize',35)
                 axis([0 13 0 1 0 umax])
                 caxis([0,5])
-                plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
+                plot3([-1 30],[.5 .5],[5 5],'color',[1 1 1])
                 %colorbar
                 view(2)
-                set(gca,'ytick',[])
+%                 set(gca,'ytick',[])
                 set(gca,'xtick',[])
-            
-            subplot(5,5,[1 6 11])
-          
-                plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',6)
-                axis([0 1.1 0 1])
-
-                set(gca,'xdir','reverse','fontsize',30)
-                ylabel('m','fontsize',30)
-                xlabel('u(t,m)','fontsize',30)
-                
-                %label for plots
-                text(1.5,1.1,['(' char(96+count) ')'],'fontsize',30)
-            
-          
-            subplot(5,5,[17:20 22:25])
-            
-                plot(x,z(:,i),'linewidth',6)
-                hold on
-                plot(x,z_nonaut(i,:),'color',[0 .5 0],'linewidth',6)
-                axis([0 13 0 1.11])
-                xlabel('x','fontsize',30)
-                ylabel('w(t,x)','fontsize',30)
+                text(-1,1,['(' char(96+count) ')'],'fontsize',35)
+                ylabel('m','fontsize',35)
+                text(10,.6,'$m = m_{crit}$','interpreter','latex','color',[1 1 1],'fontsize',35)
                 set(gca,'fontsize',30)
+                
+                
+%             subplot(18,10,60*(count-1)+[1 11 21])
+%           
+%                 plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)]/max(Soln(t(i),m_fine(2:end-1))),m_fine,'linewidth',3)
+%                 axis([0 1.1 0 1])
+% 
+%                 set(gca,'xdir','reverse')
+%                 ylabel('m')
+%                 xlabel('u(t,m)')
+%                 
+%                 %label for plots
+%                 text(1.5,1.1,['(' char(96+count) ')'],'fontsize',15)
+            
+          
+%             subplot(18,10,60*(count-1)+[32:35 42:45])
+              subplot(2,1,2)  
+
+
+                plot(x,z_tx(:,i),'linewidth',9)
+                hold on
+                plot(x,z_nonaut(i,:),'-.','color',[0 .5 0],'linewidth',9)
+                axis([0 13 0 1.11])
+                
+%                 if count == 3
+                    xlabel('x','fontsize',35)
+%                 end
+                
+                ylabel('w(t,x)','fontsize',35)
+%                 set(gca)
 
                 if count == 1
                     h=legend('Structured simulation','Nonautonomous simulation','location','northeast');
                     set(h,'fontsize',30)
                 end
-                set(gcf,'color',[1 1 1])
-            
                 
-            export_fig(gcf,['ex1_mx' num2str(count) '_take2.eps'])
-            saveas(gcf,['ex1_mx' num2str(count) '_take2.fig'])
+                set(gca,'fontsize',35)
+                
+            
+                set(fig_final,'color',[1 1 1])
+                export_fig(fig_final,['ex_2_full' num2str(count) '.eps'])
+                saveas(fig_final,['ex_2_full' num2str(count) '.fig'])
+        
+    
             
             count = count + 1;
-
         end
         
-        
-%         figure
-%         
-%         for i = step:step:tn
-%             plot(x,z(:,i))
+%         subplot(18,10,[7:10,17:20,27:30,37:40,47:50,57:60,67:70,77:80])
 %             hold on
-%             plot(x,z_nonaut(i,:),'color',[0 .5 0])
-%             axis([0 25 0 1.01])
-%             xlabel('x')
-%             ylabel('w(x,t)')
 % 
+%             tcont = linspace(0,15,300);
+%             scont = linspace(0,1,400);
+% 
+%             [Tcont,Scont] = meshgrid(tcont,scont);
+% 
+%             A = Soln(Tcont,Scont);
+% 
+%             contourf(Tcont,Scont,log(A),'edgecolor','none')        
+% 
+% 
+%             plot(tcont,sigma_inv(int_f_s(tcont),0.35),'color',[0.5 0.5 0.5],'linewidth',3)
+% 
+%             % h=legend('Distribution of m','$h(t;\underline{m})$');
+%             % set(h,'interpreter','latex')
+% 
+%             plot(tcont,sigma_inv(int_f_s(tcont),0.15),'color',[0.5 0.5 0.5],'linewidth',3)
+%             plot(tcont,sigma_inv(int_f_s(tcont),0.05),'color',[0.5 0.5 0.5],'linewidth',3)
+% 
+% 
+%             title('Distribution along $m$ over time in Example 2','interpreter','latex')
+%             xlabel('t')
+%             ylabel('m')
+% 
+%             caxis([min(min(log(A(A~=0)))) max(max(log(A)))]/1.5)
+%             colorbar
+%             text(-1.15,1.05,'(d)','fontsize',15)
 %             
-%             legend('Structured simulation','Nonautonomous simulation','location','northeast')
-%          
-%         end
-% 
-%         exportfig(gcf,['ex1_x_nonaut.eps'])
-%         saveas(gcf,['ex1_x_nonaut.fig'])
-
+%         
+%         
+%         
+%         s3 = subplot(18,10,[107:110 117:120 127:130 137:140 147:150 157:160 167:170 177:180]);
+%             
+%         h1 = openfig('Ex2_range_beta_transition.fig','reuse');
+%         ax1 = gca;
+%         fig3 = get(ax1,'children');
+%         
+%         copyobj(fig3,s3);
+%         
+%         figure(fig_final)
+%         subplot(18,10,[107:110 117:120 127:130 137:140 147:150 157:160 167:170 177:180]);
+%         
+%         xlabel('x')
+%         ylabel('w(t=30,x)')
+%         title('Various values of $\beta$','interpreter','latex')
+%         axis([0 15 0 1])
+%         text(-1.25,1.05,'(e)','fontsize',15)
+% %         legend('2.4','2.55','3.594','4.537','5.68','6','6.2','location','northeast')
+% %         
+%         
+%     set(fig_final,'color',[1 1 1])
+%     export_fig(fig_final,'ex_2_full.eps')
+%     saveas(fig_final,'ex_2_full.fig')
         
-        
-        
-    case 'video'
-        
-        % %%%make video?
-        % title_m = 'num_sim_mb_pres_exp_periodic.avi';
-        % f1 = figure();
-        % vid = VideoWriter(title_m); %%title here
-        % vid.Quality = 100;
-        % vid.FrameRate = 15;
-        % open(vid);
-
-
-        figure('units','normalized','outerposition',[0 0 1 1])
-
-        for i = 1:100:tn
-            subplot(4,4,[2:4 6:8 10:12])
-
-                surf(x,m,y(:,:,i),'edgecolor','none')
-                hold on
-                title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-                axis([0 25 0 1 0 umax])
-                caxis([0,5])
-                plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-                %colorbar
-                view(2)
-                hold off
-            
-            subplot(4,4,[14:16])
-                hold off
-                plot(x,z(:,i))
-                hold on
-                plot(x,z_nonaut(i,:),'color',[0 .5 0])
-                axis([0 25 0 1.01])
-                xlabel('x')
-                pause(.125)
-
-            subplot(4,4,[1 5 9])
-
-                plot([IC_1_d_m(1) Soln(t(i),m_fine(2:end-1)) IC_1_d_m(end)],m_fine,'linewidth',1)
-                axis([0 1.1*max(max(Soln(t(i),m_fine(2:end-1)))) 0 1])
-                hold on
-                plot(dx/5*sum(y(:,:,i),2),m,'r')
-                hold off
-                set(gca,'xdir','reverse')
-                ylabel('m')
-                xlabel('u(t,m)')
-
-
-                axis([0 10 0 1])
-
-                set(gca,'xdir','reverse')
-                ylabel('m')
-
-            %     writeVideo(vid, getframe(f1));
-
-        end
+           
 end
-
-
-switch isosurface_plot
-    
-    case 'yes'
         
-        figure
-        set(gcf,'units','normalized')
-        p = patch(isosurface(x,m,t(1:100:end),y(:,:,1:100:end), 1));
-        isonormals(x,m,t(1:100:end),y(:,:,1:100:end),p);
-        set(p,'facecolor',[.5 .5 .5],'edgecolor','none')
-        camlight
-        view([1,-11,1])
-        xlabel('x')
-        ylabel('m')
-        zlabel('t')
-        
-        
-        
-        title('isocline for example 1')
-        
-        export_fig(gcf,'isocline1.eps')
-        saveas(gcf,'isocline1.fig')
-        
-end
-
-
