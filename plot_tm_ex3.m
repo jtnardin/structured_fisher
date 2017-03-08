@@ -33,10 +33,10 @@ plot(t,sigma_inv(int_f_s(t),0.05),'color','k','linewidth',1)
 %plot m = 0.5
 
 plot([-2 17],[.5 .5],'k--','linewidth',0.5)
-text(3,0,'Subpopulation 1','fontsize',20)
-text(3,1.1,'Subpopulation 2','fontsize',20)
+text(4,0,'Inactive Population')
+text(4,1,'Active Population')
 
-title('Activation Distribution over time for Example 2','interpreter','latex')
+title('Activation Profile for Example 3','interpreter','latex')
 xlabel(' Time (t) ')
 ylabel('Activation level (m) ')
 yticks([0 0.2 0.4 0.6 0.8 1])
@@ -47,7 +47,7 @@ axis([0 12 -.1 1.2])
 map1 = ones(500,1); 
 unitgrad = linspace(0,1,500);
 
-map = [flipud(unitgrad') flipud(unitgrad') map1 ];
+map = [ map1 flipud(unitgrad') flipud(unitgrad') ];
 
 colormap(map)
 colorbar
@@ -55,5 +55,5 @@ caxis([min(min(log(A(A~=0)))) max(max(log(A)))])
 
 view(2)
 
-exportfig(gcf,'ex3_tm.eps')
+exportfig(gcf,'ex3_tm.eps','color','rgb','renderer','opengl','fontsize',1.2)
 saveas(gcf,'ex3_tm.fig')

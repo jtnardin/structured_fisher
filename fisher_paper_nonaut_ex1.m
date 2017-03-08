@@ -77,43 +77,86 @@ toc
 umax = max(max(u));
 
 
-    figure%('units','normalized','outerposition',[0 0 1 1]);
-    hold on
+%     figure%('units','normalized','outerposition',[0 0 1 1]);
+%     hold on
+% 
+%  %silly trick for making legend -- plot OFF AXIS.
+%     plot(x,-ones(length(x),1),'b--','linewidth',.5)
+%     plot(x,-ones(length(x),1),'r-','linewidth',.5)
+% 
+%     legend('Proliferating','Diffusing')
+%     
+%     for i = 1:6000:tn
+%         if psi(t(i)) > .20
+%             m_col = 'b--';
+%         else
+%             m_col = 'r-';
+%         end
+% 
+%         plot(x,z_nonaut(i,:),m_col,'linewidth',.5)
+%     end
+% 
+%     xlabel('Location (x)')
+%     ylabel('w(t,x)')
+% 
+%     axis([0 30 0 1.05])
+%     arrow([4.5 .15],[24,.15])
+%     text(18,.2,'time increasing','fontsize',30)
+%     
+%     text(-4,1.1,'(a)','fontsize',25)
+%     title('Averaged Fishers Equation, Example 1','interpreter','latex')
+% 
+% 
+%     scale = 0.05;
+% 
+%     pos = get(gca,'position');
+%     pos(2) = pos(2) +scale*pos(4);
+%     pos(4) = (1-scale)*pos(4);
+%     set(gca,'position',pos)
+%     
+%     exportfig(gcf,['nonaut_fisher_profile_ex1.eps'])
+%     saveas(gcf,['nonaut_fisher_profile_ex1.fig'])
 
- %silly trick for making legend -- plot OFF AXIS.
-    plot(x,-ones(length(x),1),'b--','linewidth',.5)
-    plot(x,-ones(length(x),1),'r-','linewidth',.5)
 
-    legend('Proliferating','Diffusing')
-    
-    for i = 1:6000:tn
-        if psi(t(i)) > .20
-            m_col = 'b--';
-        else
-            m_col = 'r-';
-        end
+%%%%% create contour
 
-        plot(x,z_nonaut(i,:),m_col,'linewidth',.5)
-    end
+figure
+hold on
 
-    xlabel('Location (x)')
-    ylabel('w(t,x)')
+contourf(x,t(1:100:tn),z_nonaut(1:100:tn,:),20,'edgecolor','none')
 
-    axis([0 30 0 1.05])
-    arrow([4.5 .15],[24,.15])
-    text(18,.2,'time increasing','fontsize',30)
-    
-    text(-4,1.1,'(a)','fontsize',25)
-    title('Averaged Fishers Equation, Example 1','interpreter','latex')
+%find where switch occurs for more than half population diffusing
+switchtime = find(abs(uniform_cdf(.05,.35,psi(t))-.2)<1e-4);
+switchtime = t(switchtime(1));
 
+% reg1 = sigma(.5,.05);
+% reg2 = sigma(.5,.35);
 
-    scale = 0.05;
+plot([-5 30],[switchtime switchtime],'k')
+% plot([-5 30],[reg1 reg1],'k')
+% plot([-5 30],[reg2 reg2],'k')
 
-    pos = get(gca,'position');
-    pos(2) = pos(2) +scale*pos(4);
-    pos(4) = (1-scale)*pos(4);
-    set(gca,'position',pos)
-    
-    exportfig(gcf,['nonaut_fisher_profile_ex1.eps'])
-    saveas(gcf,['nonaut_fisher_profile_ex1.fig'])
+xlabel('Location ($x$)','interpreter','latex')
+ylabel('Time ($t$)','interpreter','latex')
 
+%make contour blue
+map1 = ones(500,1); 
+unitgrad = linspace(0,1,500);
+map = [flipud(unitgrad') flipud(unitgrad') map1 ];
+colormap(map)
+caxis([0 1])
+colorbar
+
+axis([0 25 0 40])
+
+title('$w(t,x)$ for Example 1','interpreter','latex')
+
+text(-4,42,'(a)','fontsize',15)
+text(25,30,'D','horizontalalignment','right')
+text(25,10,'P','horizontalalignment','right')
+
+% text(11,reg2-2,'Only in subpopulation 1')
+% text(11,reg1+2,'Only in subpopulation 2')
+
+exportfig(gcf,'nonaut_fisher_profile_ex1.eps','color','rgb','renderer','opengl','fontsize',1.2)
+saveas(gcf,'nonaut_fisher_profile_ex1.fig')

@@ -20,10 +20,10 @@ m_fine = [linspace(0,0.1,100) linspace(0.1,0.9,100) linspace(0.9,1,100)];
 
 
 %define activation modulus, signal factor, and response to signal factor
-alpha = 1/2;
+alpha = 1;
 % beta = 2.005;
-beta = 5;
-gamma = -1/4;
+beta = 8;
+gamma = -1;
 
 [g,sigma,sigma_inv,s,f,int_f_s,psi] = g_sigma_h_example2(alpha,beta,gamma);
 
@@ -78,46 +78,93 @@ toc
 umax = max(max(u));
 
 
-    figure%('units','normalized','outerposition',[0 0 1 1]);
-    hold on
+%     figure%('units','normalized','outerposition',[0 0 1 1]);
+%     hold on
+% 
+%  %silly trick for making legend -- plot on top of self.
+%      plot(x,-ones(length(x),1),'b--','linewidth',.5)
+%     plot(x,-ones(length(x),1),'r-','linewidth',.5)
+% 
+%     legend('Proliferating','Diffusing')
+%    
+% 
+%     for i = 1:3000:tn
+%         if psi(t(i)) > .20
+%             m_col = 'b--';
+%         else
+%             m_col = 'r-';
+%         end
+% 
+%         plot(x,z_nonaut(i,:),m_col,'linewidth',1)
+%     end
+% 
+%     xlabel('Location (x)')
+%     ylabel('w(t,x)')
+% 
+%     axis([0 30 0 1.05])
+%     arrow([4.5 .15],[24,.15])
+%     text(20,.2,'time increasing','fontsize',30)
+%     
+%     
+%     title('Averaged Fishers Equation, Example 2','interpreter','latex')
+% 
+%     text(-4,1.1,'(a)','fontsize',25)
+%     
+%     
+%     scale = 0.05;
+% 
+%     pos = get(gca,'position');
+%     pos(2) = pos(2) +scale*pos(4);
+%     pos(4) = (1-scale)*pos(4);
+%     set(gca,'position',pos)
+%     
+%     exportfig(gcf,['nonaut_fisher_profile_ex2.eps'])
+%     saveas(gcf,['nonaut_fisher_profile_ex2.fig'])
+% 
 
- %silly trick for making legend -- plot on top of self.
-     plot(x,-ones(length(x),1),'b--','linewidth',.5)
-    plot(x,-ones(length(x),1),'r-','linewidth',.5)
 
-    legend('Proliferating','Diffusing')
-   
 
-    for i = 1:3000:tn
-        if psi(t(i)) > .20
-            m_col = 'b--';
-        else
-            m_col = 'r-';
-        end
+%%%%% make contour
 
-        plot(x,z_nonaut(i,:),m_col,'linewidth',1)
-    end
 
-    xlabel('Location (x)')
-    ylabel('w(t,x)')
+figure
+hold on
 
-    axis([0 30 0 1.05])
-    arrow([4.5 .15],[24,.15])
-    text(20,.2,'time increasing','fontsize',30)
-    
-    
-    title('Averaged Fishers Equation, Example 2','interpreter','latex')
+contourf(x,t(1:100:tn),z_nonaut(1:100:tn,:),20,'edgecolor','none')
 
-    text(-4,1.1,'(a)','fontsize',25)
-    
-    
-    scale = 0.05;
+%find where switch occurs for more than half population diffusing
+switchtime = find(abs(uniform_cdf(.05,.35,psi(t))-.5)<1e-3);
 
-    pos = get(gca,'position');
-    pos(2) = pos(2) +scale*pos(4);
-    pos(4) = (1-scale)*pos(4);
-    set(gca,'position',pos)
-    
-    exportfig(gcf,['nonaut_fisher_profile_ex2.eps'])
-    saveas(gcf,['nonaut_fisher_profile_ex2.fig'])
 
+% reg1 = sigma(.5,.05);
+% reg2 = sigma(.5,.35);
+
+plot([-5 30],[t(switchtime(1)) t(switchtime(1))],'k')
+plot([-5 30],[t(switchtime(2)) t(switchtime(2))],'k')
+% plot([-5 30],[reg1 reg1],'k')
+% plot([-5 30],[reg2 reg2],'k')
+
+xlabel('Location ($x$)','interpreter','latex')
+ylabel('Time ($t$)','interpreter','latex')
+
+%make contour blue
+map1 = ones(500,1); 
+unitgrad = linspace(0,1,500);
+map = [flipud(unitgrad') flipud(unitgrad') map1 ];
+colormap(map)
+caxis([0 1])
+colorbar
+
+axis([0 25 0 30])
+
+title('$w(t,x)$ for Example 2','interpreter','latex')
+
+text(-4,32,'(a)','fontsize',15)
+
+% text(25,22.5,'P','horizontalalignment','right')
+text(25,3,'D','horizontalalignment','right')
+text(25,19,'P','horizontalalignment','right')
+
+
+exportfig(gcf,'nonaut_fisher_profile_ex2.eps','color','rgb','renderer','opengl','fontsize',1.2)
+saveas(gcf,'nonaut_fisher_profile_ex2.fig')

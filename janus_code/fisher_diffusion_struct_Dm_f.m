@@ -1,12 +1,10 @@
-%fisher_diffusion_struct_Dm.m written 9-21-16 by JTN to simulate
-%u_t + (f(s(t))g(m)u)_m = D(m)*u_xx + lambda(m)*u(1-w). 
+function [y,z] = fisher_diffusion_struct_Dm_f(q)
+
+%fisher_diffusion_struct_Dm_f.m written 9-21-16 by JTN to simulate
+%u_t + (f(s(t))g(m)u)_m = D(m)*u_xx + lambda(m)*u(1-w) as a function 
 
 
-%%%%%%   9-21-16
-%%%%% Simulations look good, now need to clean up, maybe speed up?
-
-
-clear all; clc
+% clear all; clc
 
 %Construct vectors of independent variables
 mn = 41; %number of m points
@@ -44,73 +42,19 @@ m_int(m_bd) = [];
 
 xm_int(bd) = [];
 
-%extra bound for sensors -- sensing second, second to last points from
-%INTERIOR points.
+%extra bound for sensors)
 m_bd_1_int = 1:mn-2:(mn-2)*(xn-1)+1;
 m_bd_nm1_int = (mn-2):mn-2:(mn-2)*xn;
 
 %define activation modulus, signal factor, and response to signal factor
 % s = @(t) (1+sin(t));
 
+s = @(t) (q(1)*exp(-q(2)*t));
 
+f = @(s) 2*(s-1);
 
-D_large = 1;
-D_small = 0;
+g = @(m) m.*(1-m);%(1-m)/4;
 
-
-lambda_large = .05;
-lambda_small = 0;
-
-
-
-num = '2';
-
-%define functions based on example number
-if strcmp(num,'2')
-    
-    height = 2;
-    decay = 8;
-    
-    s = @(t) height*exp(-t/decay);
-
-    f = @(s) (s-1);
-
-    g = @(m) m.*(1-m);
-    
-    sigma_inv = @(t,m) m.*exp(t)./(1-m+m.*exp(t));
-    
-    int_fs = @(t) height*decay*(1-exp(-t/decay)) - t;
-    
-    
-    
-    
-    %initial condition
-    u0 = 10/3;
-    % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-    IC = u0*(exp(-X.^2/2)).*(X<=4).*(M>0).*(M<=0.3025);
-    IC = IC(:);
-
-    
-    
-    
-elseif strcmp(num,'3')
-    
-    
-    %initial condition
-    u0 = 10/3;
-    % IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
-    IC = u0*(X<=4).*(M>0).*(M<=0.3025);
-    IC = IC(:);
-
-
-    s = @(t) 1+sin(t);
-
-    f = @(s) 2*(s-1);
-
-    g = @(m) m.*(1-m);%(1-m)/4;
-
-end
-    
 %now define the velocity (in the m-direction) given the above variables
 V = zeros(mn-1,1);
 for i = 1:mn-1
@@ -153,6 +97,12 @@ Vec_m0 = @(t) f(s(t))*Vec_m0;
 
 
 
+%initial condition
+u0 = 1;
+% IC = u0*(X<=6).*(X>=2).*(M>=.2).*(M<=.4);
+IC = u0*(X<=5).*(M<=0.2).*exp(-M);
+IC = IC(:);
+
 
 
 %sigma for flux limiters
@@ -160,7 +110,7 @@ sigma = @(r) (r+abs(r))./(1+abs(r));
 
 %find x locations where D large
 D_cut = .5;
-lambda_cut = 0.5;
+lambda_cut = 0.005;
 
 D_m_large = x_int(M(x_int)>=D_cut);
 D_m_small = x_int(M(x_int)<D_cut);
@@ -171,15 +121,19 @@ D_bd_0_small = x_bd_0(M(x_bd_0)<D_cut);
 D_bd_l_large = x_bd_l(M(x_bd_l)>=D_cut);
 D_bd_l_small = x_bd_l(M(x_bd_l)<D_cut);
 
+D_large = 2.5;
+D_small = 0.25;
 
 ind_total = 1:total;
 
-lambda_large_ind = M<=lambda_cut;
-lambda_small_ind = M>lambda_cut;
+lambda_large_ind = M<=.5;
+lambda_small_ind = M>.5;
 
 lambda_large_ind = lambda_large_ind(:);
 lambda_small_ind = lambda_small_ind(:);
 
+lambda_large = 1;
+lambda_small = .001;
 
 %Define sparse matrix as a function for computation
 %need to define for when velocity is both positive and negative.
@@ -242,9 +196,6 @@ for i = 2:tn
         A_int = A_pos(sigma(r_e),sigma(r_w),Vec(t(i)),Vwc(t(i)),m_int,1);
         A_m1 = A_pos_m1(sigma(r_w_m1),Vwc_m1(t(i)),m_bd_n,1);
         A_m0 = A_pos_m0(sigma(r_e_m1),Vec_m0(t(i)),m_bd_0,1);
-        
-        
-        
     else
         %sensors
         [r_e,r_w,r_w_m1,r_e_m1] = negative_sensor(u(:,i-1),m_int,m_bd_n,m_bd_0,m_bd_1_int,m_bd_nm1_int);
@@ -254,8 +205,7 @@ for i = 2:tn
         A_m0 = A_neg_m0(sigma(r_e_m1),Vec_m0(t(i)),m_bd_0,1);
     end
     
-    %integrate over m (just riemann for now -- recall scheme is 1st order
-    %accurate around steep areas)
+    %integrate over m (just riemann for now)
     w = dm*accumarray(integ_mat,u(:,i-1));
     w = repmat(w',mn,1);
     w = w(:);
@@ -263,72 +213,72 @@ for i = 2:tn
     %main computation
     u(:,i) = (speye(total) + theta*(A_int + A_m1 + A_m0))\((speye(total)...
         - (1-theta)*(A_int + A_m1 + A_m0) + Dmat)*u(:,i-1) + dt*(lambda_large*u(:,i-1).*lambda_large_ind +...
-        lambda_small*u(:,i-1).*lambda_small_ind).*(1-w)); 
+        lambda_small*u(:,i-1).*lambda_small_ind).*(0.2-w)); 
   
 end
 
 toc
 
 %y for visualization
-y = zeros(mn,xn,tn);
-z = zeros(xn,tn);
+y = zeros(mn,xn,1);
+z = zeros(xn,1);
 
-for i = 1:tn
+for i = tn
     y(:,:,i) = reshape(u(:,i),mn,xn);
-    z(:,i) = dm*sum(y(:,:,i));
+    z(:) = dm*sum(y(:,:,i));
 end
+% 
+% 
+% umax = max(max(u));
+% zmax = max(max(z));
 
 
-umax = max(max(u));
-zmax = max(max(z));
 
 
-%%%make video?
-title_m = ['num_sim_ex_' num '.avi'];
-f1 = figure('units','normalized','outerposition',[0 0 1 1]);
-vid = VideoWriter(title_m); %%title here
-vid.Quality = 100;
-vid.FrameRate = 15;
-open(vid);
-
-% figure('units','normalized','outerposition',[0 0 1 1])
-    
-for i = 1:100:tn
-    subplot(1,2,1)
-    surf(x,m,y(:,:,i),'edgecolor','none')
-    hold on
-    title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
-    axis([0 25 0 1 0 umax])
-    caxis([0,5])
-    plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-    colorbar
-    view(2)
-    xlabel('x')
-    ylabel('m')
-    hold off
-    
-    subplot(1,2,2)
-    plot(x,z(:,i))    
-    axis([0 25 0 1.01])
-%     pause(.125)
-    writeVideo(vid, getframe(f1));
 end
-
-    
-close(vid)
 
 % 
+% %%%%make video?
+% % title_m = 'num_sim_ex2.avi';
+% % f1 = figure();
+% % vid = VideoWriter(title_m); %%title here
+% % vid.Quality = 100;
+% % vid.FrameRate = 15;
+% % open(vid);
+% 
+% figure('units','normalized','outerposition',[0 0 1 1])
+% 
+% for i = 1:100:tn
+%     subplot(1,2,1)
+%     surf(x,m,y(:,:,i),'edgecolor','none')    
+%     hold on
+%     title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
+%     plot3([0 20],[.5 .5],[1 1],'color',[1 1 1])
+%     axis([0 x(end) 0 1 0 umax])
+%     caxis([0,1])
+%     colorbar
+%     view(2)
+%     hold off
+%     
+%     subplot(1,2,2)
+%     plot(x,z(:,i))    
+%     axis([0 x(end) 0 1])
+%     pause(.125)
+% %    writeVideo(vid, getframe(f1));
+% end
+
+% close(vid)
+
+
 % count = 1;
 % for i = 1:3750:15001
 %     figure
 %     subplot(2,1,1)
-%     hold on
-%     contourf(x,m,y(:,:,i),'edgecolor','none')    
+%     contour(x,m,y(:,:,i))    
 %     title(['t = ' num2str(t(i)) ', f(s) = ' num2str(f(s(t(i))))])
 %     axis([0 x(end) 0 1 0 umax])
-%     caxis([0,umax/2])
-%     plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-% %     colorbar
+%     caxis([0,umax])
+%     colorbar
 %     view(2)
 %     xlabel('x')
 %     ylabel('m')
@@ -338,115 +288,15 @@ close(vid)
 %     xlabel('x')
 %     ylabel('w')
 %     title(['t = ' num2str(t(i))])
-%     axis([0 x(end) 0 1])
+%     axis([0 x(end) 0 zmax])
 % 
 %     set(gcf,'color',[1 1 1])
 %     
-%     export_fig(gcf,['num_sim_ex1_contour_' num2str(count) '.eps'])
-%     saveas(gcf,['num_sim_ex1_contour_' num2str(count) '.fig'])
+% %     export_fig(gcf,['num_sim_ex1_contour_' num2str(count) '.eps'])
+% %     saveas(gcf,['num_sim_ex1_contour_' num2str(count) '.fig'])
 %     
 %     count = count+1;
 % end
-
-
-figure
-count = 1;
-for i = 1001:4000:15001
-
-    subplot(2,2,count)
-    hold on
-    contourf(x,m,y(:,:,i),'edgecolor','none')    
-    title(['t = ' num2str(t(i))])
-    axis([0 20 0 1 0 umax])
-    caxis([0,umax/8])
-    plot3([0 30],[.5 .5],[5 5],'color',[1 1 1])
-%     colorbar
-    view(2)
-    xlabel('x')
-    ylabel('m')
-    
-    count = count + 1;
-end
-
-
-set(gcf,'color',[1 1 1])
-
-export_fig(gcf,['example_' num '_mx_grid.eps'])
-saveas(gcf,['example_' num '_mx_grid.fig'])
-
-
-
-%plots distinguishing what the population is mostly doing
-if strcmp(num,'2')
-
-    %plot profile when prolif and when diff.
-    figure
-    hold on
-
-    h = @(t) sigma_inv(-int_fs(t),1/2);
-
-    %silly trick for making legend -- plot on top of self.
-    plot(x,z(:,1),'b','linewidth',1)
-    plot(x,z(:,1),'r','linewidth',1)
-
-    for i = 1:1000:tn
-        if h(t(i)) > .15
-            m_col = 'b';
-        else
-            m_col = 'r';
-        end
-
-        plot(x,z(:,i),m_col,'linewidth',1)
-    end
-
-    xlabel('x')
-    ylabel('w(t,x)')
-
-    axis([0 20 0 1.1])
-
-    title('Nonautonomous Structured Fisher Equation')
-
-    legend('Proliferating','Diffusing')
-
-    exportfig(gcf,['nonaut_fisher_profile_ex' num '.eps'])
-    saveas(gcf,['nonaut_fisher_profile_ex' num '.fig'])
-
-
-    
-elseif strcmp(num,'3')
-    %plot profile when prolif and when diff.
-    figure
-    hold on
-
-    h = @(t) 1./(1+exp(2-2*cos(t)));
-
-    last_period = find(t>t(end)-4*pi,1,'first');
-
-    %silly trick for making legend -- plot on top of self.
-    plot(x,z(:,last_period),'b','linewidth',1)
-    plot(x,z(:,last_period),'r','linewidth',1)
-
-    for i = last_period:750:tn
-        if h(t(i)) > .15
-            m_col = 'b';
-        else
-            m_col = 'r';
-        end
-
-        plot(x,z(:,i),m_col,'linewidth',1)
-    end
-
-    xlabel('x')
-    ylabel('w(t,x)')
-
-    axis([0 30 0 1.1])
-
-    title('Nonautonomous Structured Fisher Equation')
-
-    legend('Proliferating','Diffusing')
-
-%     exportfig(gcf,['nonaut_fisher_profile_ex' num '.eps'])
-%     saveas(gcf,['nonaut_fisher_profile_ex' num '.fig'])
-
-
-end
+% 
+% 
+% 

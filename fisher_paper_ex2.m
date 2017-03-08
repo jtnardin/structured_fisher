@@ -7,8 +7,8 @@
 clear all; clc
 
 
-show_vid = 'yes';
-save_any = 'no'; %pics, vid, none
+show_vid = 'no';
+save_any = 'pics'; %pics, vid, none
 prof_diff_plot = 'no';
 isosurface_plot = 'no';
 
@@ -18,7 +18,7 @@ mn = 161; %number of m points
 xn = 151; %number of x points
 total = mn*xn;
 dt = 1e-3; %time step
-t = 0:dt:20;
+t = 0:dt:7;
 m = linspace(0,1,mn);
 dm = m(2) - m(1);
 x = linspace(0,30,xn);
@@ -33,7 +33,6 @@ m_fine = [linspace(0,0.1,100) linspace(0.1,0.9,100) linspace(0.9,1,100)];
 % s = @(t) (1+sin(t));
 
 alpha = 1;
-% beta = 2.005;
 beta = 2.55;
 gamma = -1;
 
@@ -401,7 +400,7 @@ switch save_any
     
         count = 1;
         step = floor(tn/3);
-        for i = step:step:tn
+        for i = [500 937 110]
             
             
             figure('units','normalized','outerposition',[0 0 1 1])
